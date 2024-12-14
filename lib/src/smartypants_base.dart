@@ -8,10 +8,9 @@ class SmartyPants {
 
     // Replace triple hyphens with em dash
     output = output.replaceAll('---', '—');
-    
+
     // Replace double hyphens with en dash
     output = output.replaceAll('--', '–');
-
 
     // Replace straight apostrophes with smart apostrophes
     output = output.replaceAll("'", '’');
