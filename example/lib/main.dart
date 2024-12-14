@@ -1,8 +1,7 @@
+import 'package:example/smartypants_formatter.dart';
 import 'package:flutter/material.dart';
-
-void main() {
-  runApp(const MyApp());
-}
+import 'package:flutter/services.dart';
+import 'package:smartypants/smartypants.dart';
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -10,12 +9,13 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      debugShowCheckedModeBanner: false,
+      title: 'SmartyPants Example',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: const MyHomePage(title: 'SmartyPants Example'),
     );
   }
 }
@@ -29,11 +29,13 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+  final TextEditingController _controller = TextEditingController();
+  String _formattedText = '';
 
-  void _incrementCounter() {
+  // Format the input text using SmartyPants
+  void _formatInput() {
     setState(() {
-      _counter++;
+      _formattedText = SmartyPants.formatText(_controller.text);
     });
   }
 
@@ -44,25 +46,40 @@ class _MyHomePageState extends State<MyHomePage> {
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text(widget.title),
       ),
-      body: Center(
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
+          children: [
             const Text(
-              'You have pushed the button this many times:',
+              'Formatted Text:',
+              style: TextStyle(fontWeight: FontWeight.bold),
             ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
+            const SizedBox(height: 20),
+            Expanded(
+              child: Text(_formattedText),
+            ),
+            const SizedBox(height: 10),
+            TextField(
+              controller: _controller,
+              inputFormatters: <TextInputFormatter>[
+                // You can use the SmartypantsFormatter to format the input text
+                SmartypantsFormatter(),
+              ],
+              decoration: InputDecoration(
+                labelText: 'Enter text',
+                suffixIcon: IconButton(
+                  icon: const Icon(Icons.check),
+                  onPressed: _formatInput,
+                ),
+              ),
             ),
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
+}
+
+void main() {
+  runApp(const MyApp());
 }
