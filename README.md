@@ -1,5 +1,7 @@
 # smartypants
 
+![Pub Version](https://img.shields.io/pub/v/smartypants) ![GitHub License](https://img.shields.io/github/license/eunice-hong/smartypants)
+
 A Dart package that implements SmartyPants text formatting. This package helps convert plain text into a more typographically correct format by replacing certain characters and symbols with their "smart" counterparts.
 
 ## Features
@@ -18,7 +20,7 @@ To use the `smartypants` package, add it to your `pubspec.yaml` file:
 
 ```yaml
 dependencies:
-  smartypants: ^0.0.1
+  smartypants: latest_version
 ```
 
 Then, import the package in your Dart code:
