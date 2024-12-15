@@ -20,7 +20,7 @@ To use the `smartypants` package, add it to your `pubspec.yaml` file:
 
 ```yaml
 dependencies:
-  smartypants: ^0.0.1
+  smartypants: latest_version
 ```
 
 Then, import the package in your Dart code:
