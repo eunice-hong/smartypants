@@ -1,7 +1,7 @@
 blank_issues_enabled: false
 contact_links:
   - name: 📚 Documentation
-    url: https://github.com/eunice-hong/smartypants/README.md
+    url: https://github.com/eunice-hong/smartypants
     about: Refer to the project wiki for setup guides and architecture notes.
   - name: 🚀 Roadmap & Planning
     url: https://github.com/eunice-hong/smartypants/projects
