@@ -1,0 +1,30 @@
+name: Bug Report
+description: Report a reproducible problem or crash.
+title: "[Bug] "
+labels: [ "bug" ]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      placeholder: Describe the issue and what you expected to happen.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      placeholder: |
+        1. Go to ...
+        2. Click ...
+        3. Observe ...
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      placeholder: Android 14, smartypants v1.2.3
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / Stacktrace
+      render: shell
