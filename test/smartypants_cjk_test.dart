@@ -347,4 +347,33 @@ void main() {
       expect(result, equals('See <Reference>'));
     });
   });
+  group('Regression: Non-CJK Single Angle Brackets', () {
+    test('should NOT convert single angle brackets with non-CJK content', () {
+      const input = 'Note <text> should stay';
+      final result = SmartyPants.formatText(input);
+      expect(result, equals(input),
+          reason: 'Non-CJK <text> was incorrectly converted');
+    });
+
+    test('should NOT convert single angle brackets with Cyrillic content', () {
+      const input = 'Пример <тест>';
+      final result = SmartyPants.formatText(input);
+      expect(result, equals(input),
+          reason: 'Cyrillic <тест> was incorrectly converted');
+    });
+
+    test('should NOT convert single angle brackets with Emoji only', () {
+      const input = 'Note <🙂>';
+      final result = SmartyPants.formatText(input);
+      expect(result, equals(input),
+          reason: 'Emoji <🙂> was incorrectly converted');
+    });
+
+    test('should convert mixed CJK/Non-CJK content (starts with CJK)', () {
+      // Starts with CJK to avoid HTML tokenizer interpreting "Book" as tag name
+      const input = 'See <書籍 Book>';
+      final result = SmartyPants.formatText(input);
+      expect(result, equals('See 〈書籍 Book〉'));
+    });
+  });
 }

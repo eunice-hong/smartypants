@@ -123,6 +123,12 @@ String _convertSingleAngleBrackets(String input) {
         return match[0]!;
       }
 
+      // Require at least one CJK character to trigger conversion
+      // This avoids converting non-CJK bracket usage (e.g. <text>, <3>, <🙂>)
+      if (!content.codeUnits.any(isCjkCharacter)) {
+        return match[0]!;
+      }
+
       return '〈$content〉';
     },
   );
