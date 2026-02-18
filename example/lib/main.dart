@@ -1,7 +1,7 @@
-import 'package:example/smartypants_formatter.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:smartypants/smartypants.dart';
+
+import 'examples_tab.dart';
+import 'playground_tab.dart';
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -12,69 +12,89 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'SmartyPants Example',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.deepPurple,
+          brightness: Brightness.light,
+        ),
         useMaterial3: true,
       ),
-      home: const MyHomePage(title: 'SmartyPants Example'),
+      darkTheme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.deepPurple,
+          brightness: Brightness.dark,
+        ),
+        useMaterial3: true,
+      ),
+      home: const HomePage(),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-  final String title;
+class HomePage extends StatefulWidget {
+  const HomePage({super.key});
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  State<HomePage> createState() => _HomePageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  final TextEditingController _controller = TextEditingController();
-  String _formattedText = '';
+class _HomePageState extends State<HomePage>
+    with SingleTickerProviderStateMixin {
+  late final TabController _tabController;
+  final GlobalKey<PlaygroundTabState> _playgroundKey =
+      GlobalKey<PlaygroundTabState>();
 
-  // Format the input text using SmartyPants
-  void _formatInput() {
-    setState(() {
-      _formattedText = SmartyPants.formatText(_controller.text);
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  void _onTryExample(String inputText) {
+    // Switch to Playground tab and inject the text
+    _tabController.animateTo(0);
+    // Wait for animation to settle, then set text
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _playgroundKey.currentState?.setInput(inputText);
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(widget.title),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            const Text(
-              'Formatted Text:',
-              style: TextStyle(fontWeight: FontWeight.bold),
+        title: const Text('SmartyPants'),
+        centerTitle: true,
+        bottom: TabBar(
+          controller: _tabController,
+          tabs: const [
+            Tab(
+              icon: Icon(Icons.edit_note_rounded),
+              text: 'Playground',
             ),
-            const SizedBox(height: 20),
-            Expanded(
-              child: Text(_formattedText),
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: _controller,
-              inputFormatters: <TextInputFormatter>[
-                // You can use the SmartypantsFormatter to format the input text
-                SmartypantsFormatter(),
-              ],
-              decoration: InputDecoration(
-                labelText: 'Enter text',
-                suffixIcon: IconButton(
-                  icon: const Icon(Icons.check),
-                  onPressed: _formatInput,
-                ),
-              ),
+            Tab(
+              icon: Icon(Icons.auto_stories_rounded),
+              text: 'Examples',
             ),
           ],
+          labelColor: theme.colorScheme.primary,
+          unselectedLabelColor: theme.colorScheme.onSurfaceVariant,
+          indicatorColor: theme.colorScheme.primary,
         ),
+      ),
+      body: TabBarView(
+        controller: _tabController,
+        children: [
+          PlaygroundTab(key: _playgroundKey),
+          ExamplesTab(onTryExample: _onTryExample),
+        ],
       ),
     );
   }

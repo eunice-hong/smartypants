@@ -1,0 +1,155 @@
+/// Preset example data for the SmartyPants example app.
+library;
+
+/// A single example item with input text and a short description.
+class ExampleItem {
+  final String description;
+  final String input;
+
+  const ExampleItem({
+    required this.description,
+    required this.input,
+  });
+}
+
+/// A category of examples grouped by transformation type.
+class ExampleCategory {
+  final String name;
+  final String icon;
+  final String summary;
+  final List<ExampleItem> items;
+
+  const ExampleCategory({
+    required this.name,
+    required this.icon,
+    required this.summary,
+    required this.items,
+  });
+}
+
+/// All preset example categories.
+const List<ExampleCategory> exampleCategories = [
+  ExampleCategory(
+    name: 'Smart Quotes',
+    icon: '❝',
+    summary: 'Straight quotes → curly quotes',
+    items: [
+      ExampleItem(
+        description: 'Double quotes',
+        input: '"Hello, World!"',
+      ),
+      ExampleItem(
+        description: 'Smart apostrophe',
+        input: "It's a beautiful day.",
+      ),
+      ExampleItem(
+        description: 'Nested quotes',
+        input: '"She said, \'Hello!\'"',
+      ),
+    ],
+  ),
+  ExampleCategory(
+    name: 'Dashes',
+    icon: '—',
+    summary: 'Hyphens → en/em dashes',
+    items: [
+      ExampleItem(
+        description: 'En dash (double hyphen)',
+        input: 'Pages 10--20',
+      ),
+      ExampleItem(
+        description: 'Em dash (triple hyphen)',
+        input: 'Wait---what happened?',
+      ),
+      ExampleItem(
+        description: 'Mixed dashes',
+        input: 'A--B and C---D',
+      ),
+    ],
+  ),
+  ExampleCategory(
+    name: 'Ellipsis',
+    icon: '…',
+    summary: 'Three dots → ellipsis character',
+    items: [
+      ExampleItem(
+        description: 'Trailing ellipsis',
+        input: 'To be continued...',
+      ),
+      ExampleItem(
+        description: 'Mid-sentence ellipsis',
+        input: 'Well... I think so.',
+      ),
+    ],
+  ),
+  ExampleCategory(
+    name: 'Math Symbols',
+    icon: '≥',
+    summary: 'ASCII operators → Unicode symbols',
+    items: [
+      ExampleItem(
+        description: 'Greater than or equal',
+        input: 'x >= 10',
+      ),
+      ExampleItem(
+        description: 'Less than or equal',
+        input: 'y <= 20',
+      ),
+      ExampleItem(
+        description: 'Not equal',
+        input: 'a != b',
+      ),
+      ExampleItem(
+        description: 'Combined',
+        input: 'x >= 10 and x <= 20 and x != 15',
+      ),
+    ],
+  ),
+  ExampleCategory(
+    name: 'Arrows',
+    icon: '→',
+    summary: 'ASCII arrows → Unicode arrows',
+    items: [
+      ExampleItem(
+        description: 'Right arrow',
+        input: 'Input -> Output',
+      ),
+      ExampleItem(
+        description: 'Left arrow',
+        input: 'Output <- Input',
+      ),
+      ExampleItem(
+        description: 'Bidirectional arrow',
+        input: 'A <-> B',
+      ),
+      ExampleItem(
+        description: 'Fat arrow',
+        input: 'condition => result',
+      ),
+    ],
+  ),
+  ExampleCategory(
+    name: 'HTML Support',
+    icon: '</>',
+    summary: 'HTML tags are preserved during transformation',
+    items: [
+      ExampleItem(
+        description: 'Tags preserved',
+        input: '<p>"Hello, World!"</p>',
+      ),
+      ExampleItem(
+        description: 'Nested HTML',
+        input: '<div><em>"Nested"</em> content...</div>',
+      ),
+      ExampleItem(
+        description: 'Script tags untouched',
+        input: '<script>const x = "foo" -- "bar";</script>',
+      ),
+      ExampleItem(
+        description: 'Mixed HTML & text',
+        input:
+            '<h1>"Title"</h1>\n<p>"Item 1" -- Description</p>\n<p>"Item 2" --- Description</p>',
+      ),
+    ],
+  ),
+];
