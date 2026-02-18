@@ -14,15 +14,19 @@ class SmartypantsFormatter extends TextInputFormatter {
 
     String newText = SmartyPants.formatText(newValue.text);
 
-    // Adjust cursor position proportionally to account for
-    // length changes from formatting (e.g. -- → –)
-    final lengthDiff = newText.length - newValue.text.length;
-    final cursorOffset = newValue.selection.baseOffset + lengthDiff;
-    final clampedOffset = cursorOffset.clamp(0, newText.length);
+    // To correctly position the cursor, we format the substring up to the
+    // current cursor position (the prefix). The length of this formatted
+    // prefix is where the cursor should be in the fully formatted string.
+    // This handles cases where edits early in the string shouldn't be affected
+    // by length changes (like -- -> –) occurring later in the string.
+    final prefix = newValue.text.substring(0, newValue.selection.baseOffset);
+    final formattedPrefix = SmartyPants.formatText(prefix);
 
     return newValue.copyWith(
       text: newText,
-      selection: TextSelection.collapsed(offset: clampedOffset),
+      selection: TextSelection.collapsed(
+        offset: formattedPrefix.length.clamp(0, newText.length),
+      ),
     );
   }
 }

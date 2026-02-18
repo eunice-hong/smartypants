@@ -1,4 +1,5 @@
 import 'package:example/main.dart';
+import 'package:example/smartypants_formatter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -99,5 +100,36 @@ void main() {
 
     // Should be back on Playground tab with formatted text
     expect(find.text('Input'), findsOneWidget);
+  });
+
+  test(
+      'SmartypantsFormatter calculates cursor correctly when editing before a transformation',
+      () {
+    final formatter = SmartypantsFormatter();
+
+    // Scenario: User has " --" (unformatted) and types "a" at the beginning.
+    // OldValue: " --" (selection at 0)
+    // NewValue: "a --" (selection at 1, user just typed 'a')
+
+    // Formatter converts "a --" -> "a –" (en dash).
+    // Length diff is 4 - 5 = -1.
+    // Buggy logic: cursor 1 + (-1) = 0.
+    // Correct logic: Prefix "a" -> formatted "a" (len 1). Cursor 1.
+
+    const oldValue = TextEditingValue(
+      text: ' --',
+      selection: TextSelection.collapsed(offset: 0),
+    );
+
+    const newValue = TextEditingValue(
+      text: 'a --',
+      selection: TextSelection.collapsed(offset: 1),
+    );
+
+    final result = formatter.formatEditUpdate(oldValue, newValue);
+
+    expect(result.text, 'a –');
+    expect(result.selection.baseOffset, 1,
+        reason: 'Cursor should stay after "a"');
   });
 }
