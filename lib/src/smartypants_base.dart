@@ -42,9 +42,20 @@ class SmartyPants {
     // Convert angle brackets to CJK quotation marks.
     // We use a marker strategy to protect << sequences from being tokenized
     // as HTML tags or hidden inside HTML tokens.
-    // 1. Replace << with a marker that the tokenizer treats as text.
+    //
+    // marker: U+E001 (Private Use)
+    // escape: U+E002 (Private Use)
     const doubleAngleMarker = '\uE001';
-    final preprocessed = input.replaceAll('<<', doubleAngleMarker);
+    const markerEscape = '\uE002';
+
+    // 1. Escape existing markerEscape and doubleAngleMarker chars in input.
+    //    Must escape markerEscape first!
+    final escapedInput = input
+        .replaceAll(markerEscape, '$markerEscape$markerEscape')
+        .replaceAll(doubleAngleMarker, '$markerEscape$doubleAngleMarker');
+
+    // 2. Replace << with the marker.
+    final preprocessed = escapedInput.replaceAll('<<', doubleAngleMarker);
 
     final tokens = tokenize(preprocessed);
     final buffer = StringBuffer();
@@ -70,8 +81,8 @@ class SmartyPants {
       }
     }
 
-    String transformed = _applyTransformations(
-        buffer.toString(), effectiveConfig.locale, doubleAngleMarker);
+    String transformed = _applyTransformations(buffer.toString(),
+        effectiveConfig.locale, doubleAngleMarker, markerEscape);
 
     // Restore HTML tokens
     final resultBuffer = StringBuffer();
@@ -93,12 +104,39 @@ class SmartyPants {
       }
     }
 
-    // Restore remaining markers back to <<
-    return resultBuffer.toString().replaceAll(doubleAngleMarker, '<<');
+    // Restore markers and unescape literals
+    final finalBuffer = StringBuffer();
+    final resultString = resultBuffer.toString();
+
+    for (int i = 0; i < resultString.length; i++) {
+      if (resultString[i] == markerEscape) {
+        if (i + 1 < resultString.length) {
+          final nextChar = resultString[i + 1];
+          // \uE002\uE002 -> \uE002
+          // \uE002\uE001 -> \uE001
+          if (nextChar == markerEscape || nextChar == doubleAngleMarker) {
+            finalBuffer.write(nextChar);
+            i++;
+          } else {
+            // Stray escape char, just write it
+            finalBuffer.write(markerEscape);
+          }
+        } else {
+          finalBuffer.write(markerEscape);
+        }
+      } else if (resultString[i] == doubleAngleMarker) {
+        // Unescaped marker -> <<
+        finalBuffer.write('<<');
+      } else {
+        finalBuffer.write(resultString[i]);
+      }
+    }
+
+    return finalBuffer.toString();
   }
 
-  static String _applyTransformations(
-      String input, SmartyPantsLocale locale, String doubleAngleMarker) {
+  static String _applyTransformations(String input, SmartyPantsLocale locale,
+      String doubleAngleMarker, String markerEscape) {
     String output = input;
 
     // CJK-style transformations (applied before base transformations)
@@ -107,8 +145,8 @@ class SmartyPants {
     output = normalizeCjkEllipsis(output);
 
     // Convert angle brackets using the marker
-    output =
-        convertCjkAngleBrackets(output, doubleAngleMarker: doubleAngleMarker);
+    output = convertCjkAngleBrackets(output,
+        doubleAngleMarker: doubleAngleMarker, markerEscape: markerEscape);
 
     // Base transformations (applied for all locales)
 

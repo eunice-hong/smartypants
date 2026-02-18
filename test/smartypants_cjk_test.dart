@@ -266,4 +266,26 @@ void main() {
       );
     });
   });
+  group('Regression: Literal Character Preservation', () {
+    test('should preserve literal U+E001 characters', () {
+      // \uE001 is the marker used internally.
+      const input = 'Literal \uE001 should stay \uE001';
+      final result = SmartyPants.formatText(input);
+      expect(result, equals(input), reason: 'U+E001 was corrupted');
+    });
+
+    test('should preserve literal U+E002 characters', () {
+      // \uE002 is the escape character used internally.
+      const input = 'Literal \uE002 should stay \uE002';
+      final result = SmartyPants.formatText(input);
+      expect(result, equals(input), reason: 'U+E002 was corrupted');
+    });
+
+    test('should handle mixed literal markers and real angle brackets', () {
+      const input = '<<quote>> and \uE001literal\uE001';
+      final expected = '《quote》 and \uE001literal\uE001';
+      final result = SmartyPants.formatText(input);
+      expect(result, equals(expected));
+    });
+  });
 }

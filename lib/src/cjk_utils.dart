@@ -51,47 +51,97 @@ String normalizeCjkEllipsis(String input) {
 
 /// Converts double and single angle brackets to CJK quotation marks.
 ///
+/// Converts double and single angle brackets to CJK quotation marks.
+///
 /// If [doubleAngleMarker] is provided, it is used in the regex instead of `<<`.
-/// This is useful when `<<` has been replaced by a placeholder to avoid
-/// conflicts with HTML tokenization.
+/// [markerEscape] is used to identify escaped markers that should be ignored.
 String convertCjkAngleBrackets(String input,
-    {String doubleAngleMarker = '<<'}) {
+    {String doubleAngleMarker = '<<', String? markerEscape}) {
   // 1. Double angle brackets: <<text>> -> 《text》
-  // We use the marker if provided, otherwise '<<'.
-  final doublePattern = RegExp(
-    '${RegExp.escape(doubleAngleMarker)}([^<>]+?)>>',
-  );
 
-  String output = input.replaceAllMapped(doublePattern, (match) {
-    final content = match[1]!;
-    return '《$content》';
-  });
+  if (markerEscape != null) {
+    // Complex case: matching with escape handling
+    // We look for: (escapes)(marker)(content)(marker|>>)
+    // Note: The ending part is tricky because we replaced start matching <<
+    // but the end >> might still be >> or potentially tokenized differently?
+    // Actually the input still has >> as text.
 
-  // 2. Single angle brackets: <text> → 〈text〉
-  // Exclude content starting with /, !, ? (HTML special tags)
-  output = output.replaceAllMapped(
+    // Pattern:
+    // Group 1: Optional preceding escapes (\uE002*)
+    // Group 2: The marker (\uE001)
+    // Group 3: Content
+    // Followed by >>
+    final pattern = RegExp(
+      '(${RegExp.escape(markerEscape)}*)(${RegExp.escape(doubleAngleMarker)})([^<>]+?)>>',
+    );
+
+    String output = input.replaceAllMapped(pattern, (match) {
+      final escapes = match[1]!;
+      final marker = match[2]!;
+      final content = match[3]!;
+
+      // If odd number of escapes, the marker is literal (escaped)
+      // e.g. \uE002\uE001 -> literal \uE001
+      if (escapes.length % 2 != 0) {
+        return match[0]!;
+      }
+
+      // Even number of escapes -> effective marker
+      // e.g. \uE002\uE002\uE001 -> literal \uE002 + marker -> convert
+      // We must preserve the escapes for the restoration phase
+
+      return '$escapes《$content》';
+    });
+
+    // Continue with single bracket conversion...
+    // (Rest of the function is identical to below, but we need to return output)
+    return _convertSingleAngleBrackets(output);
+  } else {
+    // Simple case: no escape handling needed (or standard <<)
+    final doublePattern = RegExp(
+      '${RegExp.escape(doubleAngleMarker)}([^<>]+?)>>',
+    );
+
+    String output = input.replaceAllMapped(doublePattern, (match) {
+      final content = match[1]!;
+      return '《$content》';
+    });
+
+    return _convertSingleAngleBrackets(output);
+  }
+}
+
+String _convertSingleAngleBrackets(String input) {
+  return input.replaceAllMapped(
     RegExp(r'<([^<>\/!?][^<>]*?)>'),
     (match) {
       final content = match[1]!;
 
-      // Skip if content looks like an HTML tag name (starts with a letter)
-      if (RegExp(r'^[a-zA-Z]').hasMatch(content)) {
-        return match[0]!;
-      }
-
-      // Skip if content starts with whitespace (broken HTML tags like < div>)
-      if (RegExp(r'^\s').hasMatch(content)) {
-        return match[0]!;
-      }
-
-      // Skip arrow patterns: <->, <-, <=
-      if (RegExp(r'^[-=]').hasMatch(content)) {
+      // Filter out common false positives
+      if (_shouldSkipAngleBracket(content)) {
         return match[0]!;
       }
 
       return '〈$content〉';
     },
   );
+}
 
-  return output;
+bool _shouldSkipAngleBracket(String content) {
+  // Skip if content looks like an HTML tag name (starts with a letter)
+  if (RegExp(r'^[a-zA-Z]').hasMatch(content)) {
+    return true;
+  }
+
+  // Skip if content starts with whitespace (broken HTML tags like < div>)
+  if (RegExp(r'^\s').hasMatch(content)) {
+    return true;
+  }
+
+  // Skip arrow patterns: <->, <-, <=
+  if (RegExp(r'^[-=]').hasMatch(content)) {
+    return true;
+  }
+
+  return false;
 }
