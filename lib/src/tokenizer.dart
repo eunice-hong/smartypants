@@ -103,6 +103,20 @@ class _Scanner {
       return null;
     }
 
+    if (tagName == '!--') {
+      // HTML Comment: scan until -->
+      final commentEnd = _input.indexOf('-->', _index);
+      if (commentEnd != -1) {
+        _index = commentEnd + 3;
+        return Token(TokenType.html, _input.substring(start, _index));
+      } else {
+        // Unclosed comment, consume rest of input? or strict fail?
+        // Browsers often consume rest of input.
+        _index = _input.length;
+        return Token(TokenType.html, _input.substring(start));
+      }
+    }
+
     // Scan attributes until '>'
     while (!isDone && peek() != '>') {
       final char = peek();

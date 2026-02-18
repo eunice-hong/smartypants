@@ -181,5 +181,11 @@ void main() {
       String expected = '<script>const x = "foo" -- "bar";</script >';
       expect(SmartyPants.formatText(input), expected);
     });
+
+    test('should handle HTML comments containing >', () {
+      String input = '<!-- a >= "b" --> "text"';
+      String expected = '<!-- a >= "b" --> “text”';
+      expect(SmartyPants.formatText(input), expected);
+    });
   });
 }
