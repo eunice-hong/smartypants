@@ -7,18 +7,20 @@ import 'example_data.dart';
 class ExampleCard extends StatelessWidget {
   final ExampleItem item;
   final VoidCallback? onTryIt;
+  final SmartyPantsConfig? config;
 
   const ExampleCard({
     super.key,
     required this.item,
     this.onTryIt,
+    this.config,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final formatted = SmartyPants.formatText(item.input);
+    final formatted = SmartyPants.formatText(item.input, config: config);
 
     return Card(
       elevation: 0,

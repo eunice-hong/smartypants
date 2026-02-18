@@ -1,6 +1,8 @@
 /// Preset example data for the SmartyPants example app.
 library;
 
+import 'package:smartypants/smartypants.dart';
+
 /// A single example item with input text and a short description.
 class ExampleItem {
   final String description;
@@ -18,12 +20,14 @@ class ExampleCategory {
   final String icon;
   final String summary;
   final List<ExampleItem> items;
+  final SmartyPantsConfig? config;
 
   const ExampleCategory({
     required this.name,
     required this.icon,
     required this.summary,
     required this.items,
+    this.config,
   });
 }
 
@@ -149,6 +153,30 @@ const List<ExampleCategory> exampleCategories = [
         description: 'Mixed HTML & text',
         input:
             '<h1>"Title"</h1>\n<p>"Item 1" -- Description</p>\n<p>"Item 2" --- Description</p>',
+      ),
+    ],
+  ),
+  ExampleCategory(
+    name: 'CJK Support',
+    icon: '한',
+    summary: 'Korean & CJK typography transformations',
+    config: SmartyPantsConfig(locale: SmartyPantsLocale.ko),
+    items: [
+      ExampleItem(
+        description: 'CJK ellipsis (。。。 → …)',
+        input: '기다려주세요。。。',
+      ),
+      ExampleItem(
+        description: 'Double angle brackets (《》)',
+        input: '책<<한국의 역사>>를 읽었다',
+      ),
+      ExampleItem(
+        description: 'Em dash in Korean',
+        input: '잠깐---뭐야?',
+      ),
+      ExampleItem(
+        description: 'Mixed Korean & English',
+        input: '"Hello" 기다려주세요。。。',
       ),
     ],
   ),

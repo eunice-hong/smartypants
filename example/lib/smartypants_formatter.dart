@@ -3,7 +3,9 @@ import 'package:smartypants/smartypants.dart';
 
 // A custom TextInputFormatter that uses SmartyPants to format the input text
 class SmartypantsFormatter extends TextInputFormatter {
-  SmartypantsFormatter();
+  final SmartyPantsConfig? config;
+
+  SmartypantsFormatter({this.config});
 
   @override
   TextEditingValue formatEditUpdate(
@@ -12,7 +14,7 @@ class SmartypantsFormatter extends TextInputFormatter {
       return newValue;
     }
 
-    String newText = SmartyPants.formatText(newValue.text);
+    String newText = SmartyPants.formatText(newValue.text, config: config);
 
     // To correctly position the cursor, we format the substring up to the
     // current cursor position (the prefix). The length of this formatted
@@ -27,7 +29,7 @@ class SmartypantsFormatter extends TextInputFormatter {
     }
 
     final prefix = newValue.text.substring(0, newValue.selection.baseOffset);
-    final formattedPrefix = SmartyPants.formatText(prefix);
+    final formattedPrefix = SmartyPants.formatText(prefix, config: config);
 
     return newValue.copyWith(
       text: newText,
