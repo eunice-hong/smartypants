@@ -61,6 +61,13 @@ class _HomePageState extends State<HomePage>
     // Wait for animation to settle, then set text
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _playgroundKey.currentState?.setInput(inputText);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Example loaded in Playground'),
+          duration: Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     });
   }
 

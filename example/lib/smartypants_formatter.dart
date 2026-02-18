@@ -8,18 +8,21 @@ class SmartypantsFormatter extends TextInputFormatter {
   @override
   TextEditingValue formatEditUpdate(
       TextEditingValue oldValue, TextEditingValue newValue) {
-    if (newValue.selection.baseOffset == 0) {
+    if (newValue.text.isEmpty) {
       return newValue;
     }
 
     String newText = SmartyPants.formatText(newValue.text);
 
-    // Keep the cursor in the same position
+    // Adjust cursor position proportionally to account for
+    // length changes from formatting (e.g. -- → –)
+    final lengthDiff = newText.length - newValue.text.length;
+    final cursorOffset = newValue.selection.baseOffset + lengthDiff;
+    final clampedOffset = cursorOffset.clamp(0, newText.length);
+
     return newValue.copyWith(
       text: newText,
-      selection: TextSelection.collapsed(
-        offset: newText.length,
-      ),
+      selection: TextSelection.collapsed(offset: clampedOffset),
     );
   }
 }

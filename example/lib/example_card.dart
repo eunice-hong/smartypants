@@ -36,7 +36,7 @@ class ExampleCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Description
+              // Description + Try it label
               Row(
                 children: [
                   Expanded(
@@ -48,10 +48,12 @@ class ExampleCard extends StatelessWidget {
                     ),
                   ),
                   if (onTryIt != null)
-                    Icon(
-                      Icons.arrow_forward_rounded,
-                      size: 16,
-                      color: colorScheme.primary.withOpacity(0.6),
+                    Text(
+                      'Try it →',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: colorScheme.primary.withOpacity(0.8),
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                 ],
               ),
@@ -134,7 +136,7 @@ class _TransformRow extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 4),
-          Text(
+          SelectableText(
             text,
             style: textStyle,
           ),

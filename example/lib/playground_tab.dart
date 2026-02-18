@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:smartypants/smartypants.dart';
+
+import 'smartypants_formatter.dart';
 
 /// A tab that lets users type text and see real-time SmartyPants transformations.
 class PlaygroundTab extends StatefulWidget {
@@ -15,6 +18,7 @@ class PlaygroundTab extends StatefulWidget {
 class PlaygroundTabState extends State<PlaygroundTab> {
   final TextEditingController _controller = TextEditingController();
   String _formattedText = '';
+  bool _useFormatter = false;
 
   @override
   void initState() {
@@ -34,9 +38,31 @@ class PlaygroundTabState extends State<PlaygroundTab> {
   }
 
   void _onTextChanged(String value) {
+    if (!_useFormatter) {
+      setState(() {
+        _formattedText = value.isEmpty ? '' : SmartyPants.formatText(value);
+      });
+    }
+  }
+
+  void _clearInput() {
+    _controller.clear();
     setState(() {
-      _formattedText = value.isEmpty ? '' : SmartyPants.formatText(value);
+      _formattedText = '';
     });
+  }
+
+  void _copyResult() {
+    if (_formattedText.isNotEmpty) {
+      Clipboard.setData(ClipboardData(text: _formattedText));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Copied to clipboard'),
+          duration: Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 
   @override
@@ -49,19 +75,47 @@ class PlaygroundTabState extends State<PlaygroundTab> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final hasText = _controller.text.isNotEmpty;
 
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Input section
-          Text(
-            'Input',
-            style: theme.textTheme.titleSmall?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-              fontWeight: FontWeight.w600,
-            ),
+          // Input header + Formatter toggle
+          Row(
+            children: [
+              Text(
+                'Input',
+                style: theme.textTheme.titleSmall?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const Spacer(),
+              Text(
+                'Live Format',
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(width: 4),
+              SizedBox(
+                height: 24,
+                child: Switch.adaptive(
+                  value: _useFormatter,
+                  onChanged: (value) {
+                    setState(() {
+                      _useFormatter = value;
+                      if (!value && _controller.text.isNotEmpty) {
+                        _formattedText =
+                            SmartyPants.formatText(_controller.text);
+                      }
+                    });
+                  },
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 8),
           TextField(
@@ -69,6 +123,9 @@ class PlaygroundTabState extends State<PlaygroundTab> {
             onChanged: _onTextChanged,
             maxLines: 5,
             minLines: 3,
+            inputFormatters: _useFormatter
+                ? <TextInputFormatter>[SmartypantsFormatter()]
+                : null,
             style: theme.textTheme.bodyMedium?.copyWith(
               fontFamily: 'monospace',
             ),
@@ -98,66 +155,110 @@ class PlaygroundTabState extends State<PlaygroundTab> {
                 ),
               ),
               contentPadding: const EdgeInsets.all(16),
+              suffixIcon: hasText
+                  ? IconButton(
+                      icon: const Icon(Icons.clear_rounded, size: 20),
+                      onPressed: _clearInput,
+                      tooltip: 'Clear',
+                    )
+                  : null,
             ),
           ),
 
           const SizedBox(height: 24),
 
-          // Result section
-          Text(
-            'Result',
-            style: theme.textTheme.titleSmall?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-              fontWeight: FontWeight.w600,
-            ),
+          // Result header + Copy button
+          Row(
+            children: [
+              Text(
+                _useFormatter ? 'Live Format Mode' : 'Result',
+                style: theme.textTheme.titleSmall?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const Spacer(),
+              if (_formattedText.isNotEmpty && !_useFormatter)
+                IconButton(
+                  icon: const Icon(Icons.copy_rounded, size: 18),
+                  onPressed: _copyResult,
+                  tooltip: 'Copy result',
+                  visualDensity: VisualDensity.compact,
+                ),
+            ],
           ),
           const SizedBox(height: 8),
           Expanded(
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 200),
-              child: _formattedText.isEmpty
-                  ? Center(
-                      key: const ValueKey('empty'),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.edit_note_rounded,
-                            size: 48,
+            child: _useFormatter
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.auto_fix_high_rounded,
+                          size: 48,
+                          color: colorScheme.onSurfaceVariant.withOpacity(0.3),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'Text is formatted as you type.\n'
+                          'The input field itself shows the result!',
+                          textAlign: TextAlign.center,
+                          style: theme.textTheme.bodyMedium?.copyWith(
                             color:
-                                colorScheme.onSurfaceVariant.withOpacity(0.3),
+                                colorScheme.onSurfaceVariant.withOpacity(0.5),
                           ),
-                          const SizedBox(height: 12),
-                          Text(
-                            'Type something above to see the result',
-                            style: theme.textTheme.bodyMedium?.copyWith(
+                        ),
+                      ],
+                    ),
+                  )
+                : AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 200),
+                    child: _formattedText.isEmpty
+                        ? Center(
+                            key: const ValueKey('empty'),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.edit_note_rounded,
+                                  size: 48,
+                                  color: colorScheme.onSurfaceVariant
+                                      .withOpacity(0.3),
+                                ),
+                                const SizedBox(height: 12),
+                                Text(
+                                  'Type something above to see the result',
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                    color: colorScheme.onSurfaceVariant
+                                        .withOpacity(0.5),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        : Container(
+                            key: const ValueKey('result'),
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(16),
+                            alignment: Alignment.topLeft,
+                            decoration: BoxDecoration(
                               color:
-                                  colorScheme.onSurfaceVariant.withOpacity(0.5),
+                                  colorScheme.primaryContainer.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: colorScheme.primaryContainer,
+                              ),
+                            ),
+                            child: SelectableText(
+                              _formattedText,
+                              style: theme.textTheme.bodyLarge?.copyWith(
+                                color: colorScheme.onPrimaryContainer,
+                                height: 1.6,
+                              ),
                             ),
                           ),
-                        ],
-                      ),
-                    )
-                  : Container(
-                      key: const ValueKey('result'),
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: colorScheme.primaryContainer.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: colorScheme.primaryContainer,
-                        ),
-                      ),
-                      child: SelectableText(
-                        _formattedText,
-                        style: theme.textTheme.bodyLarge?.copyWith(
-                          color: colorScheme.onPrimaryContainer,
-                          height: 1.6,
-                        ),
-                      ),
-                    ),
-            ),
+                  ),
           ),
         ],
       ),
