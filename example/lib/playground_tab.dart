@@ -38,11 +38,13 @@ class PlaygroundTabState extends State<PlaygroundTab> {
   }
 
   void _onTextChanged(String value) {
-    if (!_useFormatter) {
-      setState(() {
+    // Always trigger a rebuild so that UI elements depending on _controller.text
+    // (like the clear button visibility) can update.
+    setState(() {
+      if (!_useFormatter) {
         _formattedText = value.isEmpty ? '' : SmartyPants.formatText(value);
-      });
-    }
+      }
+    });
   }
 
   void _clearInput() {
