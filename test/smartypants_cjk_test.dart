@@ -319,4 +319,32 @@ void main() {
           reason: 'Padding should invalidate conversion');
     });
   });
+  group('Regression: Numeric Single Angle Brackets', () {
+    test('should NOT convert numeric single angle brackets', () {
+      const input = 'Values <10> are small.';
+      final result = SmartyPants.formatText(input);
+      expect(result, equals(input),
+          reason: 'Numeric content <10> was incorrectly converted');
+    });
+
+    test('should NOT convert single angle brackets with emoticon-like content',
+        () {
+      const input = 'I <3 you';
+      final result = SmartyPants.formatText(input);
+      expect(result, equals(input),
+          reason: 'Emoticon <3 was incorrectly converted');
+    });
+
+    test('should still convert valid CJK single angle brackets', () {
+      const input = 'See <書籍>';
+      final result = SmartyPants.formatText(input);
+      expect(result, equals('See 〈書籍〉'));
+    });
+
+    test('should preserve HTML-tag-like content (ambiguous alphanumeric)', () {
+      const input = 'See <Reference>';
+      final result = SmartyPants.formatText(input);
+      expect(result, equals('See <Reference>'));
+    });
+  });
 }

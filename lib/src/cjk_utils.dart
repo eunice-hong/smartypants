@@ -129,8 +129,8 @@ String _convertSingleAngleBrackets(String input) {
 }
 
 bool _shouldSkipAngleBracket(String content) {
-  // Skip if content looks like an HTML tag name (starts with a letter)
-  if (RegExp(r'^[a-zA-Z]').hasMatch(content)) {
+  // Skip if content is purely numeric (e.g. <10>, <3>)
+  if (RegExp(r'^\d+$').hasMatch(content)) {
     return true;
   }
 
