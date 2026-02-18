@@ -1,0 +1,17 @@
+name: Design Discussion
+description: Open-ended discussion for architecture or design decisions.
+title: "[Design] "
+labels: ["discussion"]
+body:
+  - type: textarea
+    id: topic
+    attributes:
+      label: Topic
+      placeholder: Describe the main question or design concern.
+    validations:
+      required: true
+  - type: textarea
+    id: considerations
+    attributes:
+      label: Considerations
+      placeholder: Constraints, tradeoffs, or open questions.
