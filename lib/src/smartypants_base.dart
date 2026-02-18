@@ -1,5 +1,33 @@
+import 'tokenizer.dart';
+
+class SmartyPantsConfig {
+  final bool smart;
+
+  const SmartyPantsConfig({this.smart = true});
+}
+
 class SmartyPants {
-  static String formatText(String input) {
+  static String formatText(String input, {SmartyPantsConfig? config}) {
+    final effectiveConfig = config ?? const SmartyPantsConfig();
+    if (!effectiveConfig.smart) {
+      return input;
+    }
+
+    final tokens = tokenize(input);
+    final buffer = StringBuffer();
+
+    for (final token in tokens) {
+      if (token.type == TokenType.html) {
+        buffer.write(token.content);
+      } else {
+        buffer.write(_apply_transformations(token.content));
+      }
+    }
+
+    return buffer.toString();
+  }
+
+  static String _apply_transformations(String input) {
     // Replace straight quotes with smart quotes
     String output = input.replaceAllMapped(
       RegExp(r'"([^"]+)"'),
