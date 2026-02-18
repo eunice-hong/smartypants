@@ -127,18 +127,14 @@ class _Scanner {
     // Only if it's an opening tag
     if (!isClosing && _isSpecialTag(tagName)) {
       final contentStart = _index;
-      final closingTag = '</$tagName>';
+      // Smart search for closing tag allowing whitespace: </tagName\s*>
+      final closingPattern = RegExp('</$tagName\\s*>', caseSensitive: false);
+      // We search in the substring starting from current index
+      final match = closingPattern.firstMatch(_input.substring(_index));
 
-      // smart search for closing tag
-      // For simplicity, find the next occurrence of closing tag.
-      // In a full parser, we'd handle nested same-named tags if possible,
-      // but script/style/pre don't usually nest themselves.
-      // Nested <code> inside <pre> is possible, but we preserve the outer <pre> content anyway.
-
-      final closingIndex =
-          _input.toLowerCase().indexOf(closingTag.toLowerCase(), _index);
-      if (closingIndex != -1) {
-        _index = closingIndex + closingTag.length;
+      if (match != null) {
+        // match.end is relative to the substring start (_index)
+        _index += match.end;
         return Token(TokenType.html, _input.substring(start, _index));
       }
     }

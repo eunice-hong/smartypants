@@ -173,5 +173,13 @@ void main() {
       String expected = '“Hello <em>world</em>”';
       expect(SmartyPants.formatText(input), expected);
     });
+
+    test(
+        'should text content inside script tags with whitespace in closing tag',
+        () {
+      String input = '<script>const x = "foo" -- "bar";</script >';
+      String expected = '<script>const x = "foo" -- "bar";</script >';
+      expect(SmartyPants.formatText(input), expected);
+    });
   });
 }
