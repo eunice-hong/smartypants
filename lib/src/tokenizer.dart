@@ -150,6 +150,10 @@ class _Scanner {
         // match.end is relative to the substring start (_index)
         _index += match.end;
         return Token(TokenType.html, _input.substring(start, _index));
+      } else {
+        // Unclosed special tag, consume rest of input to avoid transforming content
+        _index = _input.length;
+        return Token(TokenType.html, _input.substring(start));
       }
     }
 

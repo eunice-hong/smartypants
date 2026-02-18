@@ -193,5 +193,11 @@ void main() {
       String expected = 'Text with \uFFFC placeholder.';
       expect(SmartyPants.formatText(input), expected);
     });
+
+    test('should preserve content inside unclosed special tags', () {
+      String input = '<script>const x = "--";';
+      String expected = '<script>const x = "--";';
+      expect(SmartyPants.formatText(input), expected);
+    });
   });
 }
