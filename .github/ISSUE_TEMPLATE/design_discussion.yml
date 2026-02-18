@@ -8,8 +8,8 @@ body:
     attributes:
       label: Topic
       placeholder: Describe the main question or design concern.
-      validations:
-        required: true
+    validations:
+      required: true
   - type: textarea
     id: considerations
     attributes:
