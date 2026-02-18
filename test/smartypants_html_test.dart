@@ -187,5 +187,11 @@ void main() {
       String expected = '<!-- a >= "b" --> “text”';
       expect(SmartyPants.formatText(input), expected);
     });
+
+    test('should preserve literal U+FFFC characters', () {
+      String input = 'Text with \uFFFC placeholder.';
+      String expected = 'Text with \uFFFC placeholder.';
+      expect(SmartyPants.formatText(input), expected);
+    });
   });
 }

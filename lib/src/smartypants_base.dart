@@ -18,16 +18,22 @@ class SmartyPants {
     final htmlPlaceholders = <String>[];
 
     // Create a masked string where HTML tokens are replaced by a placeholder
-    // We use a character that is unlikely to be in the input and doesn't interfere with regex.
-    // U+FFFC (Object Replacement Character) is a good candidate.
+    // U+FFFC (Object Replacement Character) for tags.
     const placeholderChar = '\uFFFC';
+    // U+E000 (Private Use) as an escape character for literals.
+    const escapeChar = '\uE000';
 
     for (final token in tokens) {
       if (token.type == TokenType.html) {
         htmlPlaceholders.add(token.content);
         buffer.write(placeholderChar);
       } else {
-        buffer.write(token.content);
+        // Escape literal escapeChar and placeholderChar in text
+        // Must escape the escapeChar first!
+        String escaped = token.content
+            .replaceAll(escapeChar, '$escapeChar$escapeChar')
+            .replaceAll(placeholderChar, '$escapeChar$placeholderChar');
+        buffer.write(escaped);
       }
     }
 
@@ -38,7 +44,13 @@ class SmartyPants {
     int placeholderIndex = 0;
 
     for (int i = 0; i < transformed.length; i++) {
-      if (transformed[i] == placeholderChar) {
+      if (transformed[i] == escapeChar) {
+        // Next character is literal
+        if (i + 1 < transformed.length) {
+          resultBuffer.write(transformed[i + 1]);
+          i++; // Skip the literal char we just wrote
+        }
+      } else if (transformed[i] == placeholderChar) {
         if (placeholderIndex < htmlPlaceholders.length) {
           resultBuffer.write(htmlPlaceholders[placeholderIndex++]);
         }
