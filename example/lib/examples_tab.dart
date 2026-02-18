@@ -97,6 +97,7 @@ class _CategorySection extends StatelessWidget {
               padding: const EdgeInsets.only(bottom: 8),
               child: ExampleCard(
                 item: item,
+                config: category.config,
                 onTryIt: onTryExample != null
                     ? () => onTryExample!(item.input)
                     : null,
