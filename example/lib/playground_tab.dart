@@ -109,9 +109,10 @@ class PlaygroundTabState extends State<PlaygroundTab> {
                   onChanged: (value) {
                     setState(() {
                       _useFormatter = value;
-                      if (!value && _controller.text.isNotEmpty) {
-                        _formattedText =
-                            SmartyPants.formatText(_controller.text);
+                      if (!value) {
+                        _formattedText = _controller.text.isEmpty
+                            ? ''
+                            : SmartyPants.formatText(_controller.text);
                       }
                     });
                   },
