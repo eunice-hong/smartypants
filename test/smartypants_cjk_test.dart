@@ -288,4 +288,35 @@ void main() {
       expect(result, equals(expected));
     });
   });
+
+  group('Regression: Bitshift Operator Preservation', () {
+    test('should NOT convert bitshift-like expressions with spaces', () {
+      const input = 'a << b >> c';
+      final result = SmartyPants.formatText(input);
+      expect(result, equals(input),
+          reason: 'Bitshift with spaces was incorrectly converted');
+    });
+
+    test('should convert valid CJK citation without spaces', () {
+      const input = 'Read <<Title>>';
+      final result = SmartyPants.formatText(input);
+      expect(result, equals('Read 《Title》'));
+    });
+
+    test(
+        'should convert valid CJK citation with internal spaces but no padding',
+        () {
+      const input = 'Read <<The Title>>';
+      final result = SmartyPants.formatText(input);
+      expect(result, equals('Read 《The Title》'));
+    });
+
+    test('should NOT convert citation with internal padding', () {
+      // If we enforce "no padding", this should NOT convert.
+      const input = 'Read << Title >>';
+      final result = SmartyPants.formatText(input);
+      expect(result, equals(input),
+          reason: 'Padding should invalidate conversion');
+    });
+  });
 }

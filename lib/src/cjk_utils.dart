@@ -69,15 +69,15 @@ String convertCjkAngleBrackets(String input,
     // Pattern:
     // Group 1: Optional preceding escapes (\uE002*)
     // Group 2: The marker (\uE001)
-    // Group 3: Content
+    // Group 3: Content (no leading/trailing whitespace)
     // Followed by >>
     final pattern = RegExp(
-      '(${RegExp.escape(markerEscape)}*)(${RegExp.escape(doubleAngleMarker)})([^<>]+?)>>',
+      '(${RegExp.escape(markerEscape)}*)(${RegExp.escape(doubleAngleMarker)})([^<>\u0009\u000A\u000B\u000C\u000D\u0020\u0085\u00A0](?:[^<>]*[^<>\u0009\u000A\u000B\u000C\u000D\u0020\u0085\u00A0])?)>>',
     );
 
     String output = input.replaceAllMapped(pattern, (match) {
       final escapes = match[1]!;
-      final marker = match[2]!;
+      // marker is match[2]
       final content = match[3]!;
 
       // If odd number of escapes, the marker is literal (escaped)
@@ -98,8 +98,9 @@ String convertCjkAngleBrackets(String input,
     return _convertSingleAngleBrackets(output);
   } else {
     // Simple case: no escape handling needed (or standard <<)
+    // Content must not start or end with whitespace
     final doublePattern = RegExp(
-      '${RegExp.escape(doubleAngleMarker)}([^<>]+?)>>',
+      '${RegExp.escape(doubleAngleMarker)}([^<>\u0009\u000A\u000B\u000C\u000D\u0020\u0085\u00A0](?:[^<>]*[^<>\u0009\u000A\u000B\u000C\u000D\u0020\u0085\u00A0])?)>>',
     );
 
     String output = input.replaceAllMapped(doublePattern, (match) {
