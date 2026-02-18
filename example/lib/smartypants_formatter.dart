@@ -19,6 +19,13 @@ class SmartypantsFormatter extends TextInputFormatter {
     // prefix is where the cursor should be in the fully formatted string.
     // This handles cases where edits early in the string shouldn't be affected
     // by length changes (like -- -> –) occurring later in the string.
+    // Safety check: if selection is invalid (e.g. -1), we can't calculate prefix.
+    // We just return the formatted text with the original selection.
+    if (newValue.selection.baseOffset < 0 ||
+        newValue.selection.baseOffset > newValue.text.length) {
+      return newValue.copyWith(text: newText, selection: newValue.selection);
+    }
+
     final prefix = newValue.text.substring(0, newValue.selection.baseOffset);
     final formattedPrefix = SmartyPants.formatText(prefix);
 

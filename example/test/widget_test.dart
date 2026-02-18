@@ -132,4 +132,27 @@ void main() {
     expect(result.selection.baseOffset, 1,
         reason: 'Cursor should stay after "a"');
   });
+
+  test('SmartypantsFormatter handles invalid selection offset gracefully', () {
+    final formatter = SmartypantsFormatter();
+
+    const oldValue = TextEditingValue(
+      text: 'hello',
+      selection: TextSelection.collapsed(offset: 5),
+    );
+
+    // Simulate a state where selection is invalid (-1)
+    const newValue = TextEditingValue(
+      text: 'hello',
+      selection: TextSelection.collapsed(offset: -1),
+    );
+
+    final result = formatter.formatEditUpdate(oldValue, newValue);
+
+    // Should not throw RangeError.
+    // If selection is invalid, we probably just return the formatted text
+    // with the invalid selection preserved (or maybe normalized to -1).
+    expect(result.text, 'hello'); // No format change here
+    expect(result.selection.baseOffset, -1);
+  });
 }
