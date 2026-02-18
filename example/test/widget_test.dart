@@ -1,3 +1,4 @@
+import 'package:example/example_data.dart';
 import 'package:example/main.dart';
 import 'package:example/smartypants_formatter.dart';
 import 'package:flutter/material.dart';
@@ -154,5 +155,74 @@ void main() {
     // with the invalid selection preserved (or maybe normalized to -1).
     expect(result.text, 'hello'); // No format change here
     expect(result.selection.baseOffset, -1);
+  });
+
+  // ── CJK Typography Widget Tests ──────────────────────────────────────
+
+  testWidgets('Playground transforms CJK ellipsis input',
+      (WidgetTester tester) async {
+    await tester.pumpWidget(const MyApp());
+
+    final textField = find.byType(TextField);
+    await tester.enterText(textField, '기다려주세요。。。');
+    await tester.pump();
+
+    // Should normalize ideographic full stops to ellipsis
+    expect(find.text('기다려주세요…'), findsOneWidget);
+  });
+
+  testWidgets('Playground transforms double angle brackets to CJK quotes',
+      (WidgetTester tester) async {
+    await tester.pumpWidget(const MyApp());
+
+    final textField = find.byType(TextField);
+    await tester.enterText(textField, '책<<한국의 역사>>를');
+    await tester.pump();
+
+    // Should convert << >> to 《 》
+    expect(find.text('책《한국의 역사》를'), findsOneWidget);
+  });
+
+  test('exampleCategories includes CJK Support with examples', () {
+    final cjkCategory = exampleCategories.firstWhere(
+      (c) => c.name == 'CJK Support',
+    );
+    expect(cjkCategory.items, isNotEmpty);
+    expect(
+      cjkCategory.items.any((item) => item.input.contains('。。。')),
+      isTrue,
+      reason: 'CJK category should include an ellipsis example',
+    );
+  });
+
+  testWidgets('Live Format mode transforms CJK text as user types',
+      (WidgetTester tester) async {
+    await tester.pumpWidget(const MyApp());
+
+    // Enable Live Format
+    final toggle = find.byType(Switch);
+    await tester.tap(toggle);
+    await tester.pump();
+
+    // Type CJK text with ideographic stops
+    final textField = find.byType(TextField);
+    await tester.enterText(textField, '잠깐。。。');
+    await tester.pump();
+
+    // The TextField itself should contain the formatted text
+    final textFieldWidget = tester.widget<TextField>(textField);
+    expect(textFieldWidget.controller?.text, '잠깐…');
+  });
+
+  testWidgets('Playground transforms mixed CJK and English input',
+      (WidgetTester tester) async {
+    await tester.pumpWidget(const MyApp());
+
+    final textField = find.byType(TextField);
+    await tester.enterText(textField, '"Hello" 기다려주세요。。。');
+    await tester.pump();
+
+    // Both smart quotes and CJK ellipsis should be transformed
+    expect(find.text('\u201cHello\u201d 기다려주세요…'), findsOneWidget);
   });
 }
