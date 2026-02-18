@@ -60,6 +60,7 @@ class _HomePageState extends State<HomePage>
     _tabController.animateTo(0);
     // Wait for animation to settle, then set text
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       _playgroundKey.currentState?.setInput(inputText);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
