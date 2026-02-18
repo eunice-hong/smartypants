@@ -161,6 +161,36 @@ void main() {
         '<script>const x = "。。。";</script>',
       );
     });
+
+    test(
+        'should NOT convert double angle brackets inside script tags (bug fix)',
+        () {
+      const input = '<script>if (a << b) { return; }</script>';
+      expect(
+        SmartyPants.formatText(input),
+        '<script>if (a << b) { return; }</script>',
+      );
+    });
+
+    test(
+        'should NOT convert double angle brackets inside HTML attributes (bug fix)',
+        () {
+      const input = '<div data-val="<<test>>"></div>';
+      expect(
+        SmartyPants.formatText(input),
+        '<div data-val="<<test>>"></div>',
+      );
+    });
+
+    test(
+        'should convert double angle brackets in text even when mixed with HTML definitions',
+        () {
+      const input = '<<test>>';
+      expect(
+        SmartyPants.formatText(input),
+        '《test》',
+      );
+    });
   });
 
   group('SmartyPantsLocale configuration', () {

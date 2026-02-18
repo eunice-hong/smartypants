@@ -39,10 +39,12 @@ class SmartyPants {
       return input;
     }
 
-    // Convert angle brackets to CJK quotation marks BEFORE tokenization.
-    // The tokenizer treats <text> as HTML tags, which would break up <<text>>
-    // patterns and prevent the double bracket regex from matching.
-    final preprocessed = convertCjkAngleBrackets(input);
+    // Convert angle brackets to CJK quotation marks.
+    // We use a marker strategy to protect << sequences from being tokenized
+    // as HTML tags or hidden inside HTML tokens.
+    // 1. Replace << with a marker that the tokenizer treats as text.
+    const doubleAngleMarker = '\uE001';
+    final preprocessed = input.replaceAll('<<', doubleAngleMarker);
 
     final tokens = tokenize(preprocessed);
     final buffer = StringBuffer();
@@ -68,8 +70,8 @@ class SmartyPants {
       }
     }
 
-    String transformed =
-        _applyTransformations(buffer.toString(), effectiveConfig.locale);
+    String transformed = _applyTransformations(
+        buffer.toString(), effectiveConfig.locale, doubleAngleMarker);
 
     // Restore HTML tokens
     final resultBuffer = StringBuffer();
@@ -91,10 +93,12 @@ class SmartyPants {
       }
     }
 
-    return resultBuffer.toString();
+    // Restore remaining markers back to <<
+    return resultBuffer.toString().replaceAll(doubleAngleMarker, '<<');
   }
 
-  static String _applyTransformations(String input, SmartyPantsLocale locale) {
+  static String _applyTransformations(
+      String input, SmartyPantsLocale locale, String doubleAngleMarker) {
     String output = input;
 
     // CJK-style transformations (applied before base transformations)
@@ -102,8 +106,9 @@ class SmartyPants {
     // Normalize CJK-style ellipsis (。。。 → …)
     output = normalizeCjkEllipsis(output);
 
-    // Note: convertCjkAngleBrackets is applied before tokenization in
-    // formatText() to avoid conflicts with the HTML tokenizer.
+    // Convert angle brackets using the marker
+    output =
+        convertCjkAngleBrackets(output, doubleAngleMarker: doubleAngleMarker);
 
     // Base transformations (applied for all locales)
 

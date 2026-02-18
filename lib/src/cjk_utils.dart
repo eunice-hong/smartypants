@@ -49,28 +49,25 @@ String normalizeCjkEllipsis(String input) {
   return input.replaceAll(RegExp('。{3,}'), '…');
 }
 
-/// Converts angle brackets to proper CJK quotation marks.
+/// Converts double and single angle brackets to CJK quotation marks.
 ///
-/// Rules:
-/// - `<<text>>` → `《text》` (double angle brackets → double angle quotes)
-/// - `<text>` → `〈text〉` (single angle brackets → single angle quotes)
-///
-/// Skips patterns that conflict with other transformations:
-/// - HTML tags (`<div>`, `</p>`, `<!DOCTYPE>`, `<?xml?>`)
-/// - Arrow patterns (`<->`, `<-`)
-/// - Broken HTML tags (`< div>`)
-/// - Math operators (`<=`)
-String convertCjkAngleBrackets(String input) {
-  // Double angle brackets: <<text>> → 《text》
-  String output = input.replaceAllMapped(
-    RegExp(r'<<([^<>]+?)>>'),
-    (match) {
-      final content = match[1]!;
-      return '《$content》';
-    },
+/// If [doubleAngleMarker] is provided, it is used in the regex instead of `<<`.
+/// This is useful when `<<` has been replaced by a placeholder to avoid
+/// conflicts with HTML tokenization.
+String convertCjkAngleBrackets(String input,
+    {String doubleAngleMarker = '<<'}) {
+  // 1. Double angle brackets: <<text>> -> 《text》
+  // We use the marker if provided, otherwise '<<'.
+  final doublePattern = RegExp(
+    '${RegExp.escape(doubleAngleMarker)}([^<>]+?)>>',
   );
 
-  // Single angle brackets: <text> → 〈text〉
+  String output = input.replaceAllMapped(doublePattern, (match) {
+    final content = match[1]!;
+    return '《$content》';
+  });
+
+  // 2. Single angle brackets: <text> → 〈text〉
   // Exclude content starting with /, !, ? (HTML special tags)
   output = output.replaceAllMapped(
     RegExp(r'<([^<>\/!?][^<>]*?)>'),
