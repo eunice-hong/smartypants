@@ -44,9 +44,9 @@ void main() {
 
     test('should ignore quotes inside HTML attributes', () {
       String input =
-          '<img src="test.png" alt="\"Quoted\" Alt" title=\'Title\'> "Text"';
+          '<img src="test.png" alt=""Quoted" Alt" title=\'Title\'> "Text"';
       String expected =
-          '<img src="test.png" alt="\"Quoted\" Alt" title=\'Title\'> “Text”';
+          '<img src="test.png" alt=""Quoted" Alt" title=\'Title\'> “Text”';
       expect(SmartyPants.formatText(input), expected);
     });
 
@@ -79,9 +79,9 @@ void main() {
 
     test('should ignore symbols inside HTML attributes', () {
       String input =
-          '<img src="test.png" alt="\"Quoted\" -- Alt" title=\'Title ...\'> "Text" --';
+          '<img src="test.png" alt=""Quoted" -- Alt" title=\'Title ...\'> "Text" --';
       String expected =
-          '<img src="test.png" alt="\"Quoted\" -- Alt" title=\'Title ...\'> “Text” –';
+          '<img src="test.png" alt=""Quoted" -- Alt" title=\'Title ...\'> “Text” –';
       expect(SmartyPants.formatText(input), expected);
     });
 

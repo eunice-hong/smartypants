@@ -140,7 +140,6 @@ class _Scanner {
     // Check for special tags that capture content (script, style, pre, code, kbd, math)
     // Only if it's an opening tag
     if (!isClosing && _isSpecialTag(tagName)) {
-      final contentStart = _index;
       // Smart search for closing tag allowing whitespace: </tagName\s*>
       final closingPattern = RegExp('</$tagName\\s*>', caseSensitive: false);
       // We search in the substring starting from current index

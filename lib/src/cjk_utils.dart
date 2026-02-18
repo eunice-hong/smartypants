@@ -1,5 +1,6 @@
 /// Utility functions for CJK (Chinese, Japanese, Korean) character detection
 /// and typography transformations.
+library cjk_utils;
 
 /// Returns `true` if [codeUnit] falls within a CJK character range.
 ///
