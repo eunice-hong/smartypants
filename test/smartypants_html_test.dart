@@ -167,5 +167,11 @@ void main() {
           '<div><span><ul><li><a href="#">“Link”</a></li></ul></span></div>';
       expect(SmartyPants.formatText(input), expected);
     });
+
+    test('should preserve punctuation context across HTML tags', () {
+      String input = '"Hello <em>world</em>"';
+      String expected = '“Hello <em>world</em>”';
+      expect(SmartyPants.formatText(input), expected);
+    });
   });
 }

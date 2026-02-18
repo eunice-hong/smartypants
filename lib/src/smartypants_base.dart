@@ -15,16 +15,39 @@ class SmartyPants {
 
     final tokens = tokenize(input);
     final buffer = StringBuffer();
+    final htmlPlaceholders = <String>[];
+
+    // Create a masked string where HTML tokens are replaced by a placeholder
+    // We use a character that is unlikely to be in the input and doesn't interfere with regex.
+    // U+FFFC (Object Replacement Character) is a good candidate.
+    const placeholderChar = '\uFFFC';
 
     for (final token in tokens) {
       if (token.type == TokenType.html) {
-        buffer.write(token.content);
+        htmlPlaceholders.add(token.content);
+        buffer.write(placeholderChar);
       } else {
-        buffer.write(_apply_transformations(token.content));
+        buffer.write(token.content);
       }
     }
 
-    return buffer.toString();
+    String transformed = _apply_transformations(buffer.toString());
+
+    // Restore HTML tokens
+    final resultBuffer = StringBuffer();
+    int placeholderIndex = 0;
+
+    for (int i = 0; i < transformed.length; i++) {
+      if (transformed[i] == placeholderChar) {
+        if (placeholderIndex < htmlPlaceholders.length) {
+          resultBuffer.write(htmlPlaceholders[placeholderIndex++]);
+        }
+      } else {
+        resultBuffer.write(transformed[i]);
+      }
+    }
+
+    return resultBuffer.toString();
   }
 
   static String _apply_transformations(String input) {
