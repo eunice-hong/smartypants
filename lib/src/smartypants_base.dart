@@ -3,7 +3,7 @@ library smartypants_base;
 
 import 'cjk_utils.dart';
 
-part 'tokenizer.dart';
+import 'tokenizer.dart';
 
 /// Supported locale presets for typography transformations.
 ///
@@ -133,7 +133,7 @@ class SmartyPants {
     // 2. Replace << with the marker.
     final preprocessed = escapedInput.replaceAll('<<', doubleAngleMarker);
 
-    final tokens = _tokenize(preprocessed);
+    final tokens = tokenize(preprocessed);
     final buffer = StringBuffer();
     final htmlPlaceholders = <String>[];
 
@@ -144,7 +144,7 @@ class SmartyPants {
     const escapeChar = '\uE000';
 
     for (final token in tokens) {
-      if (token.type == _TokenType.html) {
+      if (token.type == TokenType.html) {
         htmlPlaceholders.add(token.content);
         buffer.write(placeholderChar);
       } else {
