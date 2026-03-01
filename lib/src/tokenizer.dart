@@ -1,18 +1,20 @@
-enum TokenType { text, html }
+part of 'smartypants_base.dart';
 
-class Token {
-  final TokenType type;
+enum _TokenType { text, html }
+
+class _Token {
+  final _TokenType type;
   final String content;
 
-  Token(this.type, this.content);
+  _Token(this.type, this.content);
 
   @override
-  String toString() => 'Token($type, "$content")';
+  String toString() => '_Token($type, "$content")';
 
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is Token &&
+      other is _Token &&
           runtimeType == other.runtimeType &&
           type == other.type &&
           content == other.content;
@@ -21,14 +23,14 @@ class Token {
   int get hashCode => type.hashCode ^ content.hashCode;
 }
 
-List<Token> tokenize(String input) {
-  final tokens = <Token>[];
+List<_Token> _tokenize(String input) {
+  final tokens = <_Token>[];
   final scanner = _Scanner(input);
   final textBuffer = StringBuffer();
 
   void flushText() {
     if (textBuffer.isNotEmpty) {
-      tokens.add(Token(TokenType.text, textBuffer.toString()));
+      tokens.add(_Token(_TokenType.text, textBuffer.toString()));
       textBuffer.clear();
     }
   }
@@ -65,7 +67,7 @@ class _Scanner {
 
   String peek() => isDone ? '' : _input[_index];
 
-  Token? scanTag() {
+  _Token? scanTag() {
     // Save state to backtrack if not a valid tag
     final start = _index;
 
@@ -108,12 +110,12 @@ class _Scanner {
       final commentEnd = _input.indexOf('-->', _index);
       if (commentEnd != -1) {
         _index = commentEnd + 3;
-        return Token(TokenType.html, _input.substring(start, _index));
+        return _Token(_TokenType.html, _input.substring(start, _index));
       } else {
         // Unclosed comment, consume rest of input? or strict fail?
         // Browsers often consume rest of input.
         _index = _input.length;
-        return Token(TokenType.html, _input.substring(start));
+        return _Token(_TokenType.html, _input.substring(start));
       }
     }
 
@@ -148,15 +150,15 @@ class _Scanner {
       if (match != null) {
         // match.end is relative to the substring start (_index)
         _index += match.end;
-        return Token(TokenType.html, _input.substring(start, _index));
+        return _Token(_TokenType.html, _input.substring(start, _index));
       } else {
         // Unclosed special tag, consume rest of input to avoid transforming content
         _index = _input.length;
-        return Token(TokenType.html, _input.substring(start));
+        return _Token(_TokenType.html, _input.substring(start));
       }
     }
 
-    return Token(TokenType.html, tagContent);
+    return _Token(_TokenType.html, tagContent);
   }
 
   String scanText() {

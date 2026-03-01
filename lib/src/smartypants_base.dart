@@ -1,5 +1,9 @@
+/// Core SmartyPants transformation logic.
+library smartypants_base;
+
 import 'cjk_utils.dart';
-import 'tokenizer.dart';
+
+part 'tokenizer.dart';
 
 /// Supported locale presets for typography transformations.
 ///
@@ -22,17 +26,89 @@ enum SmartyPantsLocale {
   zhHans,
 }
 
+/// Configuration for [SmartyPants.formatText] transformations.
+///
+/// Controls whether smart typography is applied and which locale-specific
+/// rules are used. The default configuration enables all transformations
+/// using English rules.
+///
+/// ```dart
+/// // Default: smart English typography
+/// const config = SmartyPantsConfig();
+///
+/// // Disable all transformations (pass-through mode)
+/// const passthrough = SmartyPantsConfig(smart: false);
+///
+/// // Enable Korean CJK transformations
+/// const korean = SmartyPantsConfig(locale: SmartyPantsLocale.ko);
+/// ```
 class SmartyPantsConfig {
+  /// Whether smart typography transformations are applied.
+  ///
+  /// When `false`, [SmartyPants.formatText] returns the input string
+  /// unchanged. Defaults to `true`.
   final bool smart;
+
+  /// The locale preset that controls language-specific transformation rules.
+  ///
+  /// Determines which CJK-specific rules (ellipsis normalization, angle
+  /// bracket quotation) are applied in addition to the base transformations.
+  /// Defaults to [SmartyPantsLocale.en].
   final SmartyPantsLocale locale;
 
+  /// Creates a [SmartyPantsConfig] with the given options.
+  ///
+  /// Both parameters are optional. Omitting them produces the default
+  /// configuration: smart mode enabled, English locale.
   const SmartyPantsConfig({
     this.smart = true,
     this.locale = SmartyPantsLocale.en,
   });
 }
 
+/// Applies SmartyPants-style typography transformations to a string.
+///
+/// Use [formatText] to convert plain ASCII punctuation into typographically
+/// correct Unicode characters. HTML tags and special content regions
+/// (`<script>`, `<style>`, `<pre>`, `<code>`, `<kbd>`, `<math>`,
+/// `<textarea>`) are preserved and never transformed.
 class SmartyPants {
+  /// Transforms [input] into typographically correct text.
+  ///
+  /// Applies the following transformations to plain text content:
+  ///
+  /// - `"text"` → `"text"` (curly double quotes, U+201C / U+201D)
+  /// - `'` → `'` (smart apostrophe, U+2019)
+  /// - `---` → `—` (em dash, U+2014)
+  /// - `--` → `–` (en dash, U+2013)
+  /// - `...` → `…` (ellipsis, U+2026)
+  /// - `>=` → `≥`, `<=` → `≤`, `!=` → `≠` (math symbols)
+  /// - `->` → `→`, `<-` → `←`, `<->` → `↔`, `=>` → `⇒` (arrows)
+  /// - `。。。` → `…` (CJK ideographic full stop → ellipsis)
+  /// - `<<text>>` → `《text》` (double angle bracket → CJK title marks)
+  /// - `<CJK text>` → `〈CJK text〉` (single angle bracket with CJK content)
+  ///
+  /// HTML tags are passed through unchanged. Content inside `<script>`,
+  /// `<style>`, `<pre>`, `<code>`, `<kbd>`, `<math>`, and `<textarea>` tags
+  /// is never transformed.
+  ///
+  /// Pass a [SmartyPantsConfig] to control which rules apply:
+  ///
+  /// ```dart
+  /// // Default: all transformations enabled
+  /// SmartyPants.formatText('"Hello" -- world!');
+  /// // → '"Hello" – world!'
+  ///
+  /// // Disable all transformations
+  /// SmartyPants.formatText('"Hello"', config: SmartyPantsConfig(smart: false));
+  /// // → '"Hello"'
+  ///
+  /// // With HTML — tags are preserved
+  /// SmartyPants.formatText('<p>"Hello" -- world!</p>');
+  /// // → '<p>"Hello" – world!</p>'
+  /// ```
+  ///
+  /// Returns [input] unchanged when [SmartyPantsConfig.smart] is `false`.
   static String formatText(String input, {SmartyPantsConfig? config}) {
     final effectiveConfig = config ?? const SmartyPantsConfig();
     if (!effectiveConfig.smart) {
@@ -57,7 +133,7 @@ class SmartyPants {
     // 2. Replace << with the marker.
     final preprocessed = escapedInput.replaceAll('<<', doubleAngleMarker);
 
-    final tokens = tokenize(preprocessed);
+    final tokens = _tokenize(preprocessed);
     final buffer = StringBuffer();
     final htmlPlaceholders = <String>[];
 
@@ -68,7 +144,7 @@ class SmartyPants {
     const escapeChar = '\uE000';
 
     for (final token in tokens) {
-      if (token.type == TokenType.html) {
+      if (token.type == _TokenType.html) {
         htmlPlaceholders.add(token.content);
         buffer.write(placeholderChar);
       } else {
