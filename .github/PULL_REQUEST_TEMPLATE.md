@@ -25,6 +25,7 @@
 
 - Commands run:
     - `dart test`
+    - `cd example && flutter test`
 - Notes:
     - ...
 
