@@ -52,10 +52,28 @@ String normalizeCjkEllipsis(String input) {
 
 /// Converts double and single angle brackets to CJK quotation marks.
 ///
-/// Converts double and single angle brackets to CJK quotation marks.
+/// Double angle brackets (`<<text>>`) are converted to double-width title
+/// marks (`《text》`). Single angle brackets containing at least one CJK
+/// character (`<CJK text>`) are converted to single-width title marks
+/// (`〈CJK text〉`). Purely numeric content and content starting with
+/// whitespace are not converted.
 ///
-/// If [doubleAngleMarker] is provided, it is used in the regex instead of `<<`.
-/// [markerEscape] is used to identify escaped markers that should be ignored.
+/// If [doubleAngleMarker] is provided, it is used in the regex instead of
+/// `<<`. [markerEscape] is used to identify escaped markers that should be
+/// left unconverted. These parameters are used internally by
+/// [SmartyPants.formatText] to protect `<<` sequences that appear inside
+/// HTML tokens.
+///
+/// ```dart
+/// convertCjkAngleBrackets('책<<한국의 역사>>를');
+/// // → '책《한국의 역사》를'
+///
+/// convertCjkAngleBrackets('카페<메뉴>입니다');
+/// // → '카페〈메뉴〉입니다'
+///
+/// convertCjkAngleBrackets('<Reference>'); // no CJK content
+/// // → '<Reference>'  (not converted)
+/// ```
 String convertCjkAngleBrackets(String input,
     {String doubleAngleMarker = '<<', String? markerEscape}) {
   // 1. Double angle brackets: <<text>> -> 《text》
