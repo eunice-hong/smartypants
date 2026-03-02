@@ -81,7 +81,7 @@ class _Scanner {
 
     // Check strict start of tag name
     // Must start with letter, !, or ? (for comments/doctype)
-    if (isDone || !(peek().contains(RegExp(r'[a-zA-Z!?]')))) {
+    if (isDone || !_isTagStartChar(_input.codeUnitAt(_index))) {
       _index = start;
       return null;
     }
@@ -89,7 +89,7 @@ class _Scanner {
     // Scan tag name
     final nameStart = _index;
     while (!isDone &&
-        (peek().contains(RegExp(r'[a-zA-Z0-9!?]')) ||
+        (_isTagNameChar(_input.codeUnitAt(_index)) ||
             peek() == ':' ||
             peek() == '_' ||
             peek() == '-')) {
@@ -183,6 +183,17 @@ class _Scanner {
   void advance() {
     _index++;
   }
+
+  static bool _isTagStartChar(int c) =>
+      (c >= 0x41 && c <= 0x5A) || // A-Z
+      (c >= 0x61 && c <= 0x7A) || // a-z
+      c == 0x21 || c == 0x3F; // ! ?
+
+  static bool _isTagNameChar(int c) =>
+      (c >= 0x41 && c <= 0x5A) || // A-Z
+      (c >= 0x61 && c <= 0x7A) || // a-z
+      (c >= 0x30 && c <= 0x39) || // 0-9
+      c == 0x21 || c == 0x3F; // ! ?
 
   bool _isSpecialTag(String tagName) {
     const specialTags = {
