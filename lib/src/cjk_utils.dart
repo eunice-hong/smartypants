@@ -2,6 +2,25 @@
 /// and typography transformations.
 library cjk_utils;
 
+final _cjkEllipsisPattern = RegExp('。{3,}');
+final _singleAngleBracketPattern = RegExp(r'<([^<>\/!?][^<>]*?)>');
+final _numericOnlyPattern = RegExp(r'^\d+$');
+final _startsWithWhitespacePattern = RegExp(r'^\s');
+final _startsWithArrowPattern = RegExp(r'^[-=]');
+
+const _maxAngleBracketCacheSize = 16;
+final _angleBracketPatternCache = <String, RegExp>{};
+
+RegExp _getAngleBracketPattern(String key, RegExp Function() builder) {
+  final cached = _angleBracketPatternCache[key];
+  if (cached != null) return cached;
+  final pattern = builder();
+  if (_angleBracketPatternCache.length < _maxAngleBracketCacheSize) {
+    _angleBracketPatternCache[key] = pattern;
+  }
+  return pattern;
+}
+
 /// Returns `true` if [codeUnit] falls within a CJK character range.
 ///
 /// Covers:
@@ -47,7 +66,7 @@ bool isCjkPunctuation(int codeUnit) {
 /// - The standard `...` → `…` conversion is handled by the base transformer.
 String normalizeCjkEllipsis(String input) {
   // Replace three or more consecutive ideographic full stops (。) with ellipsis
-  return input.replaceAll(RegExp('。{3,}'), '…');
+  return input.replaceAll(_cjkEllipsisPattern, '…');
 }
 
 /// Converts double and single angle brackets to CJK quotation marks.
@@ -90,8 +109,11 @@ String convertCjkAngleBrackets(String input,
     // Group 2: The marker (\uE001)
     // Group 3: Content (no leading/trailing whitespace)
     // Followed by >>
-    final pattern = RegExp(
-      '(${RegExp.escape(markerEscape)}*)(${RegExp.escape(doubleAngleMarker)})([^<>\u0009\u000A\u000B\u000C\u000D\u0020\u0085\u00A0](?:[^<>]*[^<>\u0009\u000A\u000B\u000C\u000D\u0020\u0085\u00A0])?)>>',
+    final pattern = _getAngleBracketPattern(
+      'escape:$markerEscape:marker:$doubleAngleMarker',
+      () => RegExp(
+        '(${RegExp.escape(markerEscape)}*)(${RegExp.escape(doubleAngleMarker)})([^<>\u0009\u000A\u000B\u000C\u000D\u0020\u0085\u00A0](?:[^<>]*[^<>\u0009\u000A\u000B\u000C\u000D\u0020\u0085\u00A0])?)>>',
+      ),
     );
 
     String output = input.replaceAllMapped(pattern, (match) {
@@ -118,8 +140,11 @@ String convertCjkAngleBrackets(String input,
   } else {
     // Simple case: no escape handling needed (or standard <<)
     // Content must not start or end with whitespace
-    final doublePattern = RegExp(
-      '${RegExp.escape(doubleAngleMarker)}([^<>\u0009\u000A\u000B\u000C\u000D\u0020\u0085\u00A0](?:[^<>]*[^<>\u0009\u000A\u000B\u000C\u000D\u0020\u0085\u00A0])?)>>',
+    final doublePattern = _getAngleBracketPattern(
+      'simple:$doubleAngleMarker',
+      () => RegExp(
+        '${RegExp.escape(doubleAngleMarker)}([^<>\u0009\u000A\u000B\u000C\u000D\u0020\u0085\u00A0](?:[^<>]*[^<>\u0009\u000A\u000B\u000C\u000D\u0020\u0085\u00A0])?)>>',
+      ),
     );
 
     String output = input.replaceAllMapped(doublePattern, (match) {
@@ -133,7 +158,7 @@ String convertCjkAngleBrackets(String input,
 
 String _convertSingleAngleBrackets(String input) {
   return input.replaceAllMapped(
-    RegExp(r'<([^<>\/!?][^<>]*?)>'),
+    _singleAngleBracketPattern,
     (match) {
       final content = match[1]!;
 
@@ -155,17 +180,17 @@ String _convertSingleAngleBrackets(String input) {
 
 bool _shouldSkipAngleBracket(String content) {
   // Skip if content is purely numeric (e.g. <10>, <3>)
-  if (RegExp(r'^\d+$').hasMatch(content)) {
+  if (_numericOnlyPattern.hasMatch(content)) {
     return true;
   }
 
   // Skip if content starts with whitespace (broken HTML tags like < div>)
-  if (RegExp(r'^\s').hasMatch(content)) {
+  if (_startsWithWhitespacePattern.hasMatch(content)) {
     return true;
   }
 
   // Skip arrow patterns: <->, <-, <=
-  if (RegExp(r'^[-=]').hasMatch(content)) {
+  if (_startsWithArrowPattern.hasMatch(content)) {
     return true;
   }
 
