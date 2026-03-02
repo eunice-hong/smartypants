@@ -21,7 +21,8 @@ class ExampleCard extends StatelessWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final effectiveConfig = item.config ?? config;
-    final formatted = SmartyPants.formatText(item.input, config: effectiveConfig);
+    final formatted =
+        SmartyPants.formatText(item.input, config: effectiveConfig);
 
     return Card(
       elevation: 0,

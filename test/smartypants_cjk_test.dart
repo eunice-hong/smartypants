@@ -443,7 +443,9 @@ void main() {
       );
     });
 
-    test('ellipsis=false and cjkEllipsisNormalization=false preserves all ellipsis forms', () {
+    test(
+        'ellipsis=false and cjkEllipsisNormalization=false preserves all ellipsis forms',
+        () {
       const config = SmartyPantsConfig(
         ellipsis: false,
         cjkEllipsisNormalization: false,
