@@ -187,13 +187,15 @@ class _Scanner {
   static bool _isTagStartChar(int c) =>
       (c >= 0x41 && c <= 0x5A) || // A-Z
       (c >= 0x61 && c <= 0x7A) || // a-z
-      c == 0x21 || c == 0x3F; // ! ?
+      c == 0x21 ||
+      c == 0x3F; // ! ?
 
   static bool _isTagNameChar(int c) =>
       (c >= 0x41 && c <= 0x5A) || // A-Z
       (c >= 0x61 && c <= 0x7A) || // a-z
       (c >= 0x30 && c <= 0x39) || // 0-9
-      c == 0x21 || c == 0x3F; // ! ?
+      c == 0x21 ||
+      c == 0x3F; // ! ?
 
   bool _isSpecialTag(String tagName) {
     const specialTags = {
