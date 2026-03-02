@@ -10,6 +10,8 @@ void main() {
     config: SmartyPantsConfig(locale: SmartyPantsLocale.zhHant),
   );
   runBenchmark('HTML-heavy', _htmlInput, iterations: 1000);
+  runBenchmark('Markdown-light', _markdownLightInput, iterations: 1000);
+  runBenchmark('Markdown-heavy', _markdownHeavyInput, iterations: 1000);
 }
 
 void runBenchmark(
@@ -246,6 +248,232 @@ const _cjkInput = '''
 中國料理は世界で最も多様な料理の一つです。<<四川料理>>の辛さ、<<広東料理>>の繊細さ、地域によって全く異なります。
 日本の<<和食>>は、2013年にユネスコの無形文化遺産に登録されました。一汁三菜という基本形式が特徴です。。。
 세 나라 모두 쌀을 주식으로 하지만、조리 방법과 식문화는 매우 다릅니다。<<음식>>을 통해 문화를 이해할 수 있습니다。
+''';
+
+const _markdownLightInput = '''
+# "Getting Started" with smartypants
+
+Use `smart: true` to enable all transformations at once -- it's the simplest
+option. For finer control, disable individual flags like `quotes: false`.
+
+The arrow `->` represents direction; `<->` is bidirectional. Comparisons use
+`>=` and `<=`, and `!=` means "not equal." These are left untouched inside
+inline code spans.
+
+## Installation
+
+Add the dependency to your `pubspec.yaml`:
+
+```yaml
+dependencies:
+  smartypants: ^0.0.4
+```
+
+Then run `dart pub get` -- you're ready to go.
+
+## Basic Usage
+
+```dart
+final result = SmartyPants.formatText(
+  '"Hello" -- it's a great day...',
+);
+// -> "\u201CHello\u201D \u2013 it\u2019s a great day\u2026"
+```
+
+Notice that `->` inside the code block is **not** transformed to \u2192.
+The same applies to `!=`, `>=`, and `<=` operators -- they stay as-is.
+
+## Configuration
+
+```dart
+final config = SmartyPantsConfig(
+  quotes: true,   // "..." -> \u201C...\u201D
+  dashes: true,   // -- -> \u2013, --- -> \u2014
+  ellipsis: true, // ... -> \u2026
+);
+```
+
+"Less is more," as they say... configure only what you need.
+''';
+
+const _markdownHeavyInput = '''
+# smartypants -- A Typographic Transformation Library
+
+> "Typography is the craft of endowing human language with a durable visual
+> form." -- Robert Bringhurst
+
+It's a Dart package that transforms plain ASCII punctuation into proper
+typographic characters... without breaking your code.
+
+---
+
+## Why smartypants?
+
+When you write `"Hello"` in plain text, you get straight quotes. But
+*proper* typography calls for \u201Ccurly quotes\u201D -- a subtle difference
+that makes text look more polished. The same applies to dashes (`--` ->
+en-dash, `---` -> em-dash) and ellipsis (`...` -> \u2026).
+
+The challenge is: how do you apply these transformations to prose **without**
+corrupting code snippets? That's exactly what smartypants solves.
+
+---
+
+## Installation
+
+```yaml
+# pubspec.yaml
+dependencies:
+  smartypants: ^0.0.4
+```
+
+```
+dart pub get
+```
+
+---
+
+## Core API
+
+### `SmartyPants.formatText()`
+
+```dart
+import 'package:smartypants/smartypants.dart';
+
+void main() {
+  // Basic usage -- all transformations enabled by default
+  final result = SmartyPants.formatText('"Hello, world!" -- it's great...');
+  print(result); // \u201CHello, world!\u201D \u2013 it\u2019s great\u2026
+
+  // Granular control -- disable specific transformations
+  final config = SmartyPantsConfig(
+    quotes: true,
+    dashes: false,  // keep -- and --- as-is
+    ellipsis: true,
+    mathSymbols: false, // keep >=, <=, != as-is
+    arrows: false,      // keep ->, <-, <-> as-is
+  );
+  final result2 = SmartyPants.formatText('"Hello" -- x >= 10', config: config);
+}
+```
+
+### `SmartyPantsConfig`
+
+All fields are `final` -- use `copyWith()` to create modified copies:
+
+```dart
+const base = SmartyPantsConfig(quotes: true, dashes: true);
+final noEllipsis = base.copyWith(ellipsis: false);
+```
+
+The `smart` flag acts as a master switch. Setting `smart: false` disables
+everything regardless of individual flags -- it's useful for opt-out scenarios.
+
+---
+
+## HTML Protection
+
+Content inside HTML tags like `<code>`, `<pre>`, `<kbd>`, and `<math>` is
+**never** transformed. For example:
+
+```html
+<p>She said "Hello" -- it's great.</p>
+<pre>
+  if (x >= 10 && y != null) {
+    result -> next; // don't transform this!
+  }
+</pre>
+```
+
+The `<p>` content becomes \u201CShe said \u201CHello\u201D \u2013 it\u2019s
+great.\u201D, while the `<pre>` block is left completely untouched.
+
+---
+
+## CJK Support
+
+For East Asian text, smartypants handles additional transformations:
+
+```dart
+final config = SmartyPantsConfig(
+  locale: SmartyPantsLocale.zhHant,
+  cjkEllipsisNormalization: true,  // \u3002\u3002\u3002 -> \u2026
+  cjkAngleBrackets: true,          // <<text>> -> \u300Atext\u300B
+);
+```
+
+Use `<<書名>>` for book titles in Chinese -- it becomes \u300A\u66F8\u540D\u300B
+automatically. The `!=` inside a code span like `a != b` stays unchanged.
+
+---
+
+## Inline Code Protection (Planned)
+
+> **Note:** Inline code protection is planned for v0.1.0. Once implemented,
+> backtick spans will be treated like `<code>` tags.
+
+Currently, `` `a->b` `` is still transformed to `` `a\u2192b` `` -- this is
+a known limitation. The fix involves extending the tokenizer in
+`lib/src/tokenizer.dart` to recognize backtick-delimited spans.
+
+Similarly, fenced code blocks like the ones throughout this document would be
+protected:
+
+```dart
+// This entire block would be a protected region
+// No transformations: -> != >= <= ... -- ---
+final x = "untouched";
+```
+
+---
+
+## Performance
+
+The transformation pipeline runs in O(n) time relative to input length.
+Here are representative benchmarks on a 2024 MacBook (Apple M3):
+
+| Input type | Size    | Time/call |
+|------------|---------|-----------|
+| Small text | ~100 ch | ~5 \u03bcs    |
+| Large text | ~5 KB   | ~50 \u03bcs   |
+| CJK-heavy  | ~2 KB   | ~30 \u03bcs   |
+| HTML-heavy | ~3 KB   | ~40 \u03bcs   |
+
+Regex patterns are pre-compiled as `static final` fields -- they're not
+recompiled on every call. That's the key to keeping per-call latency low
+even for large inputs...
+
+---
+
+## Edge Cases
+
+### Nested quotes
+
+```
+She said "He told me 'Don't worry' -- it's fine."
+```
+
+Becomes: She said \u201CHe told me \u2018Don\u2019t worry\u2019 \u2013 it\u2019s fine.\u201D
+
+### Private-use-area characters
+
+Internally, smartypants uses `U+FFFC` as an HTML placeholder and `U+E000`
+as an escape character. If your input already contains these code points,
+they're safely escaped before processing -- no data loss.
+
+### The `!=` operator in prose
+
+In prose, `x != y` becomes `x \u2260 y`. But inside any protected region
+(HTML tag or, eventually, Markdown code span), it stays as `!=`. Context
+matters -- and smartypants handles it correctly.
+
+---
+
+## Contributing
+
+"The best way to improve a tool is to use it," someone once said... and then
+file issues. See `CONTRIBUTING.md` for guidelines. PRs are welcome -- please
+include tests for any new transformation rules. Coverage >= 80% is required.
 ''';
 
 const _htmlInput = '''
