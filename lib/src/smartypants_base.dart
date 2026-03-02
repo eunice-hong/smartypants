@@ -28,42 +28,151 @@ enum SmartyPantsLocale {
 
 /// Configuration for [SmartyPants.formatText] transformations.
 ///
-/// Controls whether smart typography is applied and which locale-specific
-/// rules are used. The default configuration enables all transformations
-/// using English rules.
+/// Controls whether smart typography is applied, which locale-specific rules
+/// are used, and which individual transformations are enabled.
+///
+/// All per-transformation flags default to `true`. When [smart] is `false`,
+/// all transformations are disabled regardless of individual flag values.
 ///
 /// ```dart
-/// // Default: smart English typography
+/// // Default: all transformations enabled, English locale
 /// const config = SmartyPantsConfig();
 ///
 /// // Disable all transformations (pass-through mode)
 /// const passthrough = SmartyPantsConfig(smart: false);
 ///
-/// // Enable Korean CJK transformations
+/// // Quotes only — disable everything else
+/// const quotesOnly = SmartyPantsConfig(
+///   dashes: false,
+///   ellipsis: false,
+///   mathSymbols: false,
+///   arrows: false,
+///   whitespaceNormalization: false,
+/// );
+///
+/// // Korean locale with CJK transformations
 /// const korean = SmartyPantsConfig(locale: SmartyPantsLocale.ko);
 /// ```
 class SmartyPantsConfig {
   /// Whether smart typography transformations are applied.
   ///
   /// When `false`, [SmartyPants.formatText] returns the input string
-  /// unchanged. Defaults to `true`.
+  /// unchanged. Overrides all per-transformation flags. Defaults to `true`.
   final bool smart;
 
   /// The locale preset that controls language-specific transformation rules.
   ///
-  /// Determines which CJK-specific rules (ellipsis normalization, angle
-  /// bracket quotation) are applied in addition to the base transformations.
   /// Defaults to [SmartyPantsLocale.en].
   final SmartyPantsLocale locale;
 
-  /// Creates a [SmartyPantsConfig] with the given options.
+  /// Whether to convert straight double quotes to curly quotes and
+  /// straight apostrophes to smart apostrophes.
   ///
-  /// Both parameters are optional. Omitting them produces the default
-  /// configuration: smart mode enabled, English locale.
+  /// - `"text"` → `"text"` (U+201C / U+201D)
+  /// - `'` → `'` (U+2019)
+  ///
+  /// Defaults to `true`.
+  final bool quotes;
+
+  /// Whether to convert hyphen sequences to en/em dashes.
+  ///
+  /// - `--` → `–` (en dash, U+2013)
+  /// - `---` → `—` (em dash, U+2014)
+  ///
+  /// Defaults to `true`.
+  final bool dashes;
+
+  /// Whether to convert three consecutive dots to an ellipsis character.
+  ///
+  /// - `...` → `…` (U+2026)
+  ///
+  /// See also [cjkEllipsisNormalization] for CJK-style ellipsis.
+  /// Defaults to `true`.
+  final bool ellipsis;
+
+  /// Whether to convert ASCII mathematical comparison operators to Unicode.
+  ///
+  /// - `>=` → `≥` (U+2265)
+  /// - `<=` → `≤` (U+2264)
+  /// - `!=` → `≠` (U+2260)
+  ///
+  /// Defaults to `true`.
+  final bool mathSymbols;
+
+  /// Whether to convert ASCII arrow sequences to Unicode arrow characters.
+  ///
+  /// - `->` → `→` (U+2192)
+  /// - `<-` → `←` (U+2190)
+  /// - `<->` → `↔` (U+2194)
+  /// - `=>` → `⇒` (U+21D2)
+  ///
+  /// Defaults to `true`.
+  final bool arrows;
+
+  /// Whether to collapse runs of whitespace to a single space.
+  ///
+  /// Defaults to `true`.
+  final bool whitespaceNormalization;
+
+  /// Whether to normalize CJK ideographic full stop sequences to an ellipsis.
+  ///
+  /// - `。。。` (3+ stops) → `…` (U+2026)
+  ///
+  /// Defaults to `true`.
+  final bool cjkEllipsisNormalization;
+
+  /// Whether to convert angle bracket sequences to CJK quotation marks.
+  ///
+  /// - `<<text>>` → `《text》`
+  /// - `<CJKtext>` → `〈CJKtext〉`
+  ///
+  /// Defaults to `true`.
+  final bool cjkAngleBrackets;
+
+  /// Creates a [SmartyPantsConfig].
+  ///
+  /// All parameters are optional and default to their documented values.
   const SmartyPantsConfig({
     this.smart = true,
     this.locale = SmartyPantsLocale.en,
+    this.quotes = true,
+    this.dashes = true,
+    this.ellipsis = true,
+    this.mathSymbols = true,
+    this.arrows = true,
+    this.whitespaceNormalization = true,
+    this.cjkEllipsisNormalization = true,
+    this.cjkAngleBrackets = true,
   });
+
+  /// Returns a copy of this config with the given fields replaced.
+  SmartyPantsConfig copyWith({
+    bool? smart,
+    SmartyPantsLocale? locale,
+    bool? quotes,
+    bool? dashes,
+    bool? ellipsis,
+    bool? mathSymbols,
+    bool? arrows,
+    bool? whitespaceNormalization,
+    bool? cjkEllipsisNormalization,
+    bool? cjkAngleBrackets,
+  }) {
+    return SmartyPantsConfig(
+      smart: smart ?? this.smart,
+      locale: locale ?? this.locale,
+      quotes: quotes ?? this.quotes,
+      dashes: dashes ?? this.dashes,
+      ellipsis: ellipsis ?? this.ellipsis,
+      mathSymbols: mathSymbols ?? this.mathSymbols,
+      arrows: arrows ?? this.arrows,
+      whitespaceNormalization:
+          whitespaceNormalization ?? this.whitespaceNormalization,
+      cjkEllipsisNormalization:
+          cjkEllipsisNormalization ?? this.cjkEllipsisNormalization,
+      cjkAngleBrackets: cjkAngleBrackets ?? this.cjkAngleBrackets,
+    );
+  }
 }
 
 /// Applies SmartyPants-style typography transformations to a string.
@@ -160,8 +269,8 @@ class SmartyPants {
       }
     }
 
-    String transformed = _applyTransformations(buffer.toString(),
-        effectiveConfig.locale, doubleAngleMarker, markerEscape);
+    String transformed = _applyTransformations(
+        buffer.toString(), effectiveConfig, doubleAngleMarker, markerEscape);
 
     // Restore HTML tokens
     final resultBuffer = StringBuffer();
@@ -214,54 +323,65 @@ class SmartyPants {
     return finalBuffer.toString();
   }
 
-  static String _applyTransformations(String input, SmartyPantsLocale locale,
-      String doubleAngleMarker, String markerEscape) {
+  static String _applyTransformations(
+    String input,
+    SmartyPantsConfig config,
+    String doubleAngleMarker,
+    String markerEscape,
+  ) {
     String output = input;
 
     // CJK-style transformations (applied before base transformations)
 
-    // Normalize CJK-style ellipsis (。。。 → …)
-    output = normalizeCjkEllipsis(output);
+    if (config.cjkEllipsisNormalization) {
+      output = normalizeCjkEllipsis(output);
+    }
 
-    // Convert angle brackets using the marker
-    output = convertCjkAngleBrackets(output,
-        doubleAngleMarker: doubleAngleMarker, markerEscape: markerEscape);
+    if (config.cjkAngleBrackets) {
+      output = convertCjkAngleBrackets(
+        output,
+        doubleAngleMarker: doubleAngleMarker,
+        markerEscape: markerEscape,
+      );
+    }
 
-    // Base transformations (applied for all locales)
+    // Base transformations
 
-    // Replace straight quotes with smart quotes
-    output = output.replaceAllMapped(
-      _quotePattern,
-      (match) => '\u201C${match[1]}\u201D',
-    );
+    if (config.quotes) {
+      output = output.replaceAllMapped(
+        _quotePattern,
+        (match) => '\u201C${match[1]}\u201D',
+      );
+      output = output.replaceAll("'", '\u2019');
+    }
 
-    // Replace triple hyphens with em dash
-    output = output.replaceAll('---', '\u2014');
+    if (config.dashes) {
+      output = output.replaceAll('---', '\u2014');
+      output = output.replaceAll('--', '\u2013');
+    }
 
-    // Replace double hyphens with en dash
-    output = output.replaceAll('--', '\u2013');
+    if (config.whitespaceNormalization) {
+      output = output.replaceAll(_whitespacePattern, ' ');
+    }
 
-    // Replace straight apostrophes with smart apostrophes
-    output = output.replaceAll("'", '\u2019');
+    if (config.ellipsis) {
+      output = output.replaceAll('...', '\u2026');
+    }
 
-    // Replace multiple spaces with a single space
-    output = output.replaceAll(_whitespacePattern, ' ');
+    if (config.mathSymbols) {
+      output = output
+          .replaceAll('>=', '\u2265')
+          .replaceAll('<=', '\u2264')
+          .replaceAll('!=', '\u2260');
+    }
 
-    // Replace ellipsis
-    output = output.replaceAll('...', '\u2026');
-
-    // Replace mathematical symbols
-    output = output
-        .replaceAll('>=', '\u2265')
-        .replaceAll('<=', '\u2264')
-        .replaceAll('!=', '\u2260');
-
-    // Replace arrows
-    output = output
-        .replaceAll('<->', '\u2194')
-        .replaceAll('->', '\u2192')
-        .replaceAll('<-', '\u2190')
-        .replaceAll('=>', '\u21D2');
+    if (config.arrows) {
+      output = output
+          .replaceAll('<->', '\u2194')
+          .replaceAll('->', '\u2192')
+          .replaceAll('<-', '\u2190')
+          .replaceAll('=>', '\u21D2');
+    }
 
     return output;
   }
