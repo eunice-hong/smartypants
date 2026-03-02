@@ -7,10 +7,12 @@ import 'package:smartypants/smartypants.dart';
 class ExampleItem {
   final String description;
   final String input;
+  final SmartyPantsConfig? config;
 
   const ExampleItem({
     required this.description,
     required this.input,
+    this.config,
   });
 }
 
@@ -153,6 +155,48 @@ const List<ExampleCategory> exampleCategories = [
         description: 'Mixed HTML & text',
         input:
             '<h1>"Title"</h1>\n<p>"Item 1" -- Description</p>\n<p>"Item 2" --- Description</p>',
+      ),
+    ],
+  ),
+  ExampleCategory(
+    name: 'Granular Config',
+    icon: '⚙',
+    summary: 'Per-transformation control with SmartyPantsConfig',
+    items: [
+      ExampleItem(
+        description: 'Quotes only (dashes disabled)',
+        input: '"Hello" -- World',
+        config: SmartyPantsConfig(dashes: false),
+      ),
+      ExampleItem(
+        description: 'Dashes only (quotes disabled)',
+        input: '"Hello" -- World',
+        config: SmartyPantsConfig(quotes: false),
+      ),
+      ExampleItem(
+        description: 'No whitespace normalization',
+        input: 'Hello   World...',
+        config: SmartyPantsConfig(whitespaceNormalization: false),
+      ),
+      ExampleItem(
+        description: 'Arrows disabled',
+        input: 'Step 1 -> Step 2 => Done',
+        config: SmartyPantsConfig(arrows: false),
+      ),
+      ExampleItem(
+        description: 'Math symbols disabled',
+        input: 'x >= 10 and y != 0',
+        config: SmartyPantsConfig(mathSymbols: false),
+      ),
+      ExampleItem(
+        description: 'CJK ellipsis disabled (ASCII ellipsis still works)',
+        input: 'Hello... 기다려주세요。。。',
+        config: SmartyPantsConfig(cjkEllipsisNormalization: false),
+      ),
+      ExampleItem(
+        description: 'CJK angle brackets disabled',
+        input: '책<<제목>>을 읽었다',
+        config: SmartyPantsConfig(cjkAngleBrackets: false),
       ),
     ],
   ),

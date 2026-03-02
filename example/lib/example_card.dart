@@ -20,7 +20,9 @@ class ExampleCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final formatted = SmartyPants.formatText(item.input, config: config);
+    final effectiveConfig = item.config ?? config;
+    final formatted =
+        SmartyPants.formatText(item.input, config: effectiveConfig);
 
     return Card(
       elevation: 0,
