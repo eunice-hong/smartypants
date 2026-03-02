@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:smartypants/smartypants.dart';
 
 import 'examples_tab.dart';
 import 'playground_tab.dart';
@@ -55,13 +56,13 @@ class _HomePageState extends State<HomePage>
     super.dispose();
   }
 
-  void _onTryExample(String inputText) {
+  void _onTryExample(String inputText, SmartyPantsConfig? config) {
     // Switch to Playground tab and inject the text
     _tabController.animateTo(0);
     // Wait for animation to settle, then set text
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      _playgroundKey.currentState?.setInput(inputText);
+      _playgroundKey.currentState?.setInput(inputText, config: config);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Example loaded in Playground'),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:smartypants/smartypants.dart';
 
 import 'example_card.dart';
 import 'example_data.dart';
@@ -6,7 +7,7 @@ import 'example_data.dart';
 /// A tab that displays preset transformation examples grouped by category.
 class ExamplesTab extends StatelessWidget {
   /// Called when the user taps "Try it" on an example card.
-  final ValueChanged<String>? onTryExample;
+  final void Function(String, SmartyPantsConfig?)? onTryExample;
 
   const ExamplesTab({super.key, this.onTryExample});
 
@@ -35,7 +36,7 @@ class _CategorySection extends StatelessWidget {
   final ExampleCategory category;
   final ColorScheme colorScheme;
   final ThemeData theme;
-  final ValueChanged<String>? onTryExample;
+  final void Function(String, SmartyPantsConfig?)? onTryExample;
 
   const _CategorySection({
     required this.category,
@@ -99,7 +100,8 @@ class _CategorySection extends StatelessWidget {
                 item: item,
                 config: category.config,
                 onTryIt: onTryExample != null
-                    ? () => onTryExample!(item.input)
+                    ? () => onTryExample!(
+                        item.input, item.config ?? category.config)
                     : null,
               ),
             ),

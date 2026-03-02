@@ -19,21 +19,24 @@ class PlaygroundTabState extends State<PlaygroundTab> {
   final TextEditingController _controller = TextEditingController();
   String _formattedText = '';
   bool _useFormatter = false;
+  SmartyPantsConfig? _config;
 
   @override
   void initState() {
     super.initState();
     if (widget.initialText != null && widget.initialText!.isNotEmpty) {
       _controller.text = widget.initialText!;
-      _formattedText = SmartyPants.formatText(widget.initialText!);
+      _formattedText =
+          SmartyPants.formatText(widget.initialText!, config: _config);
     }
   }
 
   /// Sets the input text programmatically (e.g. from an example card).
-  void setInput(String text) {
+  void setInput(String text, {SmartyPantsConfig? config}) {
     _controller.text = text;
     setState(() {
-      _formattedText = SmartyPants.formatText(text);
+      _config = config;
+      _formattedText = SmartyPants.formatText(text, config: _config);
     });
   }
 
@@ -42,7 +45,8 @@ class PlaygroundTabState extends State<PlaygroundTab> {
     // (like the clear button visibility) can update.
     setState(() {
       if (!_useFormatter) {
-        _formattedText = value.isEmpty ? '' : SmartyPants.formatText(value);
+        _formattedText =
+            value.isEmpty ? '' : SmartyPants.formatText(value, config: _config);
       }
     });
   }
@@ -51,6 +55,7 @@ class PlaygroundTabState extends State<PlaygroundTab> {
     _controller.clear();
     setState(() {
       _formattedText = '';
+      _config = null;
     });
   }
 
@@ -112,7 +117,8 @@ class PlaygroundTabState extends State<PlaygroundTab> {
                       if (!value) {
                         _formattedText = _controller.text.isEmpty
                             ? ''
-                            : SmartyPants.formatText(_controller.text);
+                            : SmartyPants.formatText(_controller.text,
+                                config: _config);
                       }
                     });
                   },
@@ -127,7 +133,7 @@ class PlaygroundTabState extends State<PlaygroundTab> {
             maxLines: 5,
             minLines: 3,
             inputFormatters: _useFormatter
-                ? <TextInputFormatter>[SmartypantsFormatter()]
+                ? <TextInputFormatter>[SmartypantsFormatter(config: _config)]
                 : null,
             style: theme.textTheme.bodyMedium?.copyWith(
               fontFamily: 'monospace',
