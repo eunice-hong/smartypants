@@ -376,4 +376,101 @@ void main() {
       expect(result, equals('See 〈書籍 Book〉'));
     });
   });
+
+  group('CJK per-transformation flags', () {
+    // cjkEllipsisNormalization
+
+    test('cjkEllipsisNormalization=false preserves ideographic full stops', () {
+      const config = SmartyPantsConfig(cjkEllipsisNormalization: false);
+      expect(
+        SmartyPants.formatText('기다려주세요。。。', config: config),
+        '기다려주세요。。。',
+      );
+    });
+
+    test('cjkEllipsisNormalization=false does not affect ASCII ellipsis', () {
+      const config = SmartyPantsConfig(cjkEllipsisNormalization: false);
+      expect(
+        SmartyPants.formatText('Hello...', config: config),
+        'Hello\u2026',
+      );
+    });
+
+    test('cjkEllipsisNormalization=false does not affect angle brackets', () {
+      const config = SmartyPantsConfig(cjkEllipsisNormalization: false);
+      expect(
+        SmartyPants.formatText('책<<제목>>', config: config),
+        '책《제목》',
+      );
+    });
+
+    // cjkAngleBrackets
+
+    test('cjkAngleBrackets=false preserves double angle brackets', () {
+      const config = SmartyPantsConfig(cjkAngleBrackets: false);
+      expect(
+        SmartyPants.formatText('책<<제목>>', config: config),
+        '책<<제목>>',
+      );
+    });
+
+    test('cjkAngleBrackets=false preserves single CJK angle brackets', () {
+      const config = SmartyPantsConfig(cjkAngleBrackets: false);
+      expect(
+        SmartyPants.formatText('한국어<작품>텍스트', config: config),
+        '한국어<작품>텍스트',
+      );
+    });
+
+    test('cjkAngleBrackets=false does not affect CJK ellipsis', () {
+      const config = SmartyPantsConfig(cjkAngleBrackets: false);
+      expect(
+        SmartyPants.formatText('기다려주세요。。。', config: config),
+        '기다려주세요\u2026',
+      );
+    });
+
+    // combinations
+
+    test('both CJK flags false disables both CJK transforms', () {
+      const config = SmartyPantsConfig(
+        cjkEllipsisNormalization: false,
+        cjkAngleBrackets: false,
+      );
+      expect(
+        SmartyPants.formatText('책<<제목>> 기다려주세요。。。', config: config),
+        '책<<제목>> 기다려주세요。。。',
+      );
+    });
+
+    test('ellipsis=false and cjkEllipsisNormalization=false preserves all ellipsis forms', () {
+      const config = SmartyPantsConfig(
+        ellipsis: false,
+        cjkEllipsisNormalization: false,
+      );
+      expect(
+        SmartyPants.formatText('Hello... 기다려주세요。。。', config: config),
+        'Hello... 기다려주세요。。。',
+      );
+    });
+
+    test('smart=false overrides CJK flags', () {
+      const config = SmartyPantsConfig(
+        smart: false,
+        cjkEllipsisNormalization: true,
+        cjkAngleBrackets: true,
+      );
+      expect(
+        SmartyPants.formatText('기다려주세요。。。', config: config),
+        '기다려주세요。。。',
+      );
+    });
+
+    test('default config still applies both CJK transforms (regression)', () {
+      expect(
+        SmartyPants.formatText('책<<제목>> 기다려주세요。。。'),
+        '책《제목》 기다려주세요\u2026',
+      );
+    });
+  });
 }
