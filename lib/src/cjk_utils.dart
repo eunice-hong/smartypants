@@ -8,10 +8,17 @@ final _numericOnlyPattern = RegExp(r'^\d+$');
 final _startsWithWhitespacePattern = RegExp(r'^\s');
 final _startsWithArrowPattern = RegExp(r'^[-=]');
 
+const _maxAngleBracketCacheSize = 16;
 final _angleBracketPatternCache = <String, RegExp>{};
 
 RegExp _getAngleBracketPattern(String key, RegExp Function() builder) {
-  return _angleBracketPatternCache.putIfAbsent(key, builder);
+  final cached = _angleBracketPatternCache[key];
+  if (cached != null) return cached;
+  final pattern = builder();
+  if (_angleBracketPatternCache.length < _maxAngleBracketCacheSize) {
+    _angleBracketPatternCache[key] = pattern;
+  }
+  return pattern;
 }
 
 /// Returns `true` if [codeUnit] falls within a CJK character range.
