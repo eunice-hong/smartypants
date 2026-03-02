@@ -195,6 +195,42 @@ void main() {
     );
   });
 
+  test('exampleCategories includes Markdown Support with examples', () {
+    final markdownCategory = exampleCategories.firstWhere(
+      (c) => c.name == 'Markdown Support',
+    );
+    expect(markdownCategory.items, isNotEmpty);
+    expect(
+      markdownCategory.items.any((item) => item.input.contains('`')),
+      isTrue,
+      reason: 'Markdown category should include an inline code example',
+    );
+  });
+
+  testWidgets('Playground preserves inline code from transformation',
+      (WidgetTester tester) async {
+    await tester.pumpWidget(const MyApp());
+
+    final textField = find.byType(TextField);
+    await tester.enterText(textField, '`a->b`');
+    await tester.pump();
+
+    // Arrow inside backtick span must NOT be transformed to →
+    expect(find.text('`a\u2192b`'), findsNothing);
+  });
+
+  testWidgets('Playground transforms prose but preserves inline code',
+      (WidgetTester tester) async {
+    await tester.pumpWidget(const MyApp());
+
+    final textField = find.byType(TextField);
+    await tester.enterText(textField, '"text" `a->b`');
+    await tester.pump();
+
+    // Smart quotes applied to prose; arrow inside backtick span unchanged
+    expect(find.text('\u201ctext\u201d `a->b`'), findsWidgets);
+  });
+
   testWidgets('Live Format mode transforms CJK text as user types',
       (WidgetTester tester) async {
     await tester.pumpWidget(const MyApp());
