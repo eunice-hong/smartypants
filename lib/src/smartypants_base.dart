@@ -73,6 +73,9 @@ class SmartyPantsConfig {
 /// (`<script>`, `<style>`, `<pre>`, `<code>`, `<kbd>`, `<math>`,
 /// `<textarea>`) are preserved and never transformed.
 class SmartyPants {
+  static final _quotePattern = RegExp(r'"([^"]+)"');
+  static final _whitespacePattern = RegExp(r'\s+');
+
   /// Transforms [input] into typographically correct text.
   ///
   /// Applies the following transformations to plain text content:
@@ -228,7 +231,7 @@ class SmartyPants {
 
     // Replace straight quotes with smart quotes
     output = output.replaceAllMapped(
-      RegExp(r'"([^"]+)"'),
+      _quotePattern,
       (match) => '\u201C${match[1]}\u201D',
     );
 
@@ -242,7 +245,7 @@ class SmartyPants {
     output = output.replaceAll("'", '\u2019');
 
     // Replace multiple spaces with a single space
-    output = output.replaceAll(RegExp(r'\s+'), ' ');
+    output = output.replaceAll(_whitespacePattern, ' ');
 
     // Replace ellipsis
     output = output.replaceAll('...', '\u2026');
