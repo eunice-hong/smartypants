@@ -225,4 +225,68 @@ void main() {
     // Both smart quotes and CJK ellipsis should be transformed
     expect(find.text('\u201cHello\u201d 기다려주세요…'), findsOneWidget);
   });
+
+  // ── SmartypantsFormatter Edge Case Tests ─────────────────────────────────
+
+  test('SmartypantsFormatter handles non-BMP Unicode without crash', () {
+    final formatter = SmartypantsFormatter();
+
+    // Non-BMP characters (emoji U+1F600) require surrogate pairs in UTF-16.
+    // The formatter must not crash when the cursor lands inside a surrogate pair.
+    const newValue = TextEditingValue(
+      text: '"Hello \u{1F600}"',
+      selection: TextSelection.collapsed(offset: 9),
+    );
+    const oldValue = TextEditingValue(text: '');
+
+    expect(
+      () => formatter.formatEditUpdate(oldValue, newValue),
+      returnsNormally,
+    );
+  });
+
+  test('SmartypantsFormatter preserves cursor position after transformation',
+      () {
+    final formatter = SmartypantsFormatter();
+
+    // '"Hello"' (7 chars) transforms to '\u201cHello\u201d' (7 chars).
+    // Cursor placed at end (offset 7) should stay at end after formatting.
+    const oldValue = TextEditingValue(text: '');
+    const newValue = TextEditingValue(
+      text: '"Hello"',
+      selection: TextSelection.collapsed(offset: 7),
+    );
+
+    final result = formatter.formatEditUpdate(oldValue, newValue);
+
+    expect(result.text, '\u201cHello\u201d');
+    expect(
+      result.selection.baseOffset,
+      result.text.length,
+      reason: 'Cursor should be at the end of the transformed text',
+    );
+  });
+
+  test('SmartypantsFormatter handles rapid sequential edits', () {
+    final formatter = SmartypantsFormatter();
+    var current = const TextEditingValue(text: '');
+
+    // Simulate typing '"Hello" -- ' character by character
+    final chars = ['"', 'H', 'e', 'l', 'l', 'o', '"', ' ', '-', '-', ' '];
+    for (final char in chars) {
+      final next = TextEditingValue(
+        text: current.text + char,
+        selection: TextSelection.collapsed(
+          offset: current.text.length + 1,
+        ),
+      );
+      expect(
+        () => current = formatter.formatEditUpdate(current, next),
+        returnsNormally,
+        reason: 'Should not throw when appending "$char" to "${current.text}"',
+      );
+    }
+
+    expect(current.text, isNotEmpty);
+  });
 }
