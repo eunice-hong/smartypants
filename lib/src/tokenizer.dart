@@ -228,6 +228,21 @@ class _Scanner {
 
     if (fenceChar != '`' && fenceChar != '~') return null;
 
+    // P2: A backtick run preceded by an odd number of backslashes begins with
+    // an escaped literal (CommonMark §6.1) and must not open a code region.
+    if (fenceChar == '`') {
+      int numBackslashes = 0;
+      int i = start - 1;
+      while (i >= 0 && _input[i] == '\\') {
+        numBackslashes++;
+        i--;
+      }
+      if (numBackslashes % 2 == 1) {
+        _index = start;
+        return null;
+      }
+    }
+
     // Count consecutive opening characters
     final openStart = _index;
     while (!isDone && peek() == fenceChar) {
@@ -245,10 +260,16 @@ class _Scanner {
       return _scanFencedBlock(start, fenceChar, openCount);
     }
 
-    // Backticks: 3 or more at a line-start position → fenced code block.
-    // Mid-line runs of 3+ backticks fall through to inline-span scanning.
+    // Backticks: 3 or more at a line-start position → fenced code block,
+    // but only when the info string contains no backticks (CommonMark §4.4:
+    // backtick-fence info strings must not include backtick characters).
+    // Mid-line runs, or runs with a backtick-containing info string, fall
+    // through to inline-span scanning.
     if (openCount >= 3 && _isAtLineStart(start)) {
-      return _scanFencedBlock(start, fenceChar, openCount);
+      if (!_infoStringHasBacktick(_index)) {
+        return _scanFencedBlock(start, fenceChar, openCount);
+      }
+      // Info string contains a backtick — not a valid fenced block opener.
     }
 
     // Backticks 1–2 (or 3+ mid-line): inline code span
@@ -352,6 +373,18 @@ class _Scanner {
       (c >= 0x30 && c <= 0x39) || // 0-9
       c == 0x21 ||
       c == 0x3F; // ! ?
+
+  /// Returns true if the region from [pos] to the next newline (or EOF)
+  /// contains a backtick character.  Used to validate backtick-fence info
+  /// strings: CommonMark §4.4 forbids backticks in backtick-fence info strings.
+  bool _infoStringHasBacktick(int pos) {
+    for (int i = pos; i < _input.length; i++) {
+      final c = _input[i];
+      if (c == '\n' || c == '\r') return false;
+      if (c == '`') return true;
+    }
+    return false;
+  }
 
   /// Returns true if [pos] is a valid fenced-block opener position:
   /// either the very start of [_input], or preceded only by up to 3 space

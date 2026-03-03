@@ -336,4 +336,74 @@ void main() {
       );
     });
   });
+
+  group('Backtick fence opener: info string validation (P1)', () {
+    // CommonMark §4.4: backtick-fence info strings must not contain backticks.
+    // If the info string has a backtick, the opener is invalid and must fall
+    // through to inline-span matching so prose after the span is transformed.
+
+    test('info string with backtick is not a valid fenced block opener', () {
+      // ````code``` "after"` — info string "code```" contains backticks.
+      // Falls to inline span (4-backtick opener looking for 4-backtick closer).
+      // No 4-backtick closer exists → backtracks → prose is transformed.
+      expect(
+        SmartyPants.formatText('````code``` "after"'),
+        contains('\u201C'), // opening " in "after" must be smart-quoted
+      );
+    });
+
+    test('info string without backtick opens a valid fenced block', () {
+      // ```python\n…\n``` — "python" has no backtick → fenced block protected.
+      expect(
+        SmartyPants.formatText('```python\na->b\n```\n"hi"'),
+        '```python\na->b\n```\n\u201Chi\u201D',
+      );
+    });
+
+    test('plain fence with no info string still opens a fenced block', () {
+      expect(
+        SmartyPants.formatText('```\na->b\n```\n"hi"'),
+        '```\na->b\n```\n\u201Chi\u201D',
+      );
+    });
+  });
+
+  group('Escaped backtick handling (P2)', () {
+    // CommonMark §6.1: a backslash before a backtick escapes it, making it a
+    // plain-text literal rather than a code-span delimiter.
+
+    test('backtick preceded by backslash is not a code span opener', () {
+      // \`a->b` — the opening backtick is escaped; no code span forms.
+      // Arrow must be transformed.
+      expect(
+        SmartyPants.formatText(r'\`a->b`'),
+        contains('\u2192'),
+      );
+    });
+
+    test('escaped backtick does not swallow arrow in surrounding prose', () {
+      // Without the fix, \`a->b` would be mis-parsed as a code span,
+      // protecting -> from transformation.
+      final result = SmartyPants.formatText(r'\`a->b`');
+      expect(result, isNot(contains('->')));
+    });
+
+    test('double-backslash before backtick is not an escape (even count)', () {
+      // \\`a->b` — two backslashes escape each other, leaving ` as a real
+      // opener. Content is protected; arrow must NOT be transformed.
+      expect(
+        SmartyPants.formatText(r'\\`a->b`'),
+        isNot(contains('\u2192')),
+      );
+    });
+
+    test('triple-backslash before backtick is an escape (odd count)', () {
+      // \\\`a->b` — three backslashes: the third is escaped by none, leaving
+      // the backtick escaped. Arrow must be transformed.
+      expect(
+        SmartyPants.formatText(r'\\\`a->b`'),
+        contains('\u2192'),
+      );
+    });
+  });
 }
