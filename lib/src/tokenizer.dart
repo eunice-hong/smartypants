@@ -274,21 +274,29 @@ class _Scanner {
     }
     if (!isDone) advance(); // consume '\n'
 
-    // Search for a closing fence: a line that begins with >= openCount
-    // of the same fence character
+    // Search for a closing fence: a line that consists of >= openCount fence
+    // characters followed by optional whitespace only (CommonMark §4.4–4.5).
     while (!isDone) {
       final lineStart = _index;
       while (!isDone && peek() == fenceChar) {
         advance();
       }
       final closeCount = _index - lineStart;
-      if (closeCount >= openCount) {
-        // Consume the rest of the closing line
+      // A valid closer must have only optional whitespace after the fence chars.
+      // A line like "```python" has enough backticks but is not a valid closer.
+      bool isValidCloser = closeCount >= openCount;
+      if (isValidCloser) {
         while (!isDone && peek() != '\n') {
+          if (peek() != ' ' && peek() != '\t') {
+            isValidCloser = false;
+            break;
+          }
           advance();
         }
-        if (!isDone) advance(); // consume '\n'
-        return Token(TokenType.markdown, _input.substring(start, _index));
+        if (isValidCloser) {
+          if (!isDone) advance(); // consume '\n'
+          return Token(TokenType.markdown, _input.substring(start, _index));
+        }
       }
       // Not a closing fence — advance to the end of this line
       while (!isDone && peek() != '\n') {

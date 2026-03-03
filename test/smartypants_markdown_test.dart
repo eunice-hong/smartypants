@@ -78,6 +78,24 @@ void main() {
       const input = '````\na->b\n````';
       expect(SmartyPants.formatText(input), input);
     });
+
+    test('closing fence with trailing whitespace is still a valid closer', () {
+      // A line of exactly openCount backticks + trailing spaces/tabs closes the
+      // block (CommonMark §4.4).
+      const input = '```\na->b\n```   ';
+      expect(SmartyPants.formatText(input), input);
+    });
+
+    // Regression: a line like "```python" starts with >= openCount backticks
+    // but has non-whitespace content after them — it must NOT close the fence.
+    test(
+        'line with fence chars + non-whitespace content does not close the block',
+        () {
+      // The inner "```python" line has 3 backticks but a non-whitespace tail;
+      // it must be treated as code content, not as a closer.
+      const input = '```\n```python\na != b\n```';
+      expect(SmartyPants.formatText(input), input);
+    });
   });
 
   group('Markdown fenced code block protection (tilde)', () {
@@ -104,6 +122,13 @@ void main() {
 
     test('should handle four-tilde fence closed by four tildes', () {
       const input = '~~~~\na->b\n~~~~';
+      expect(SmartyPants.formatText(input), input);
+    });
+
+    // Regression: "~~~python" inside a tilde fence must not close the block.
+    test('tilde line with non-whitespace tail does not close the fenced block',
+        () {
+      const input = '~~~\n~~~python\na != b\n~~~';
       expect(SmartyPants.formatText(input), input);
     });
   });
