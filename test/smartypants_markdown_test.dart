@@ -143,6 +143,27 @@ void main() {
       );
     });
 
+    // Regression: when a double-backtick opener has no matching double-backtick
+    // closer, scanMarkdown() backtracks.  The entire run (both backticks) must
+    // be consumed atomically as plain text.  If only one backtick were consumed,
+    // the second would be retried as a single-backtick opener and could
+    // spuriously match the lone closer at the end, masking the content as code.
+    test(
+        'double-backtick opener with only single-backtick closer applies transforms',
+        () {
+      // ``a->b` — double-backtick has no closer; single-backtick at end is
+      // also unmatched.  Everything is plain text → arrow must be transformed.
+      expect(SmartyPants.formatText('``a->b`'), '``a\u2192b`');
+    });
+
+    test(
+        'single-backtick opener with only double-backtick closer applies transforms',
+        () {
+      // `a->b`` — single-backtick has no single-backtick closer (the `` at the
+      // end has count 2 ≠ 1).  Plain text → arrow must be transformed.
+      expect(SmartyPants.formatText('`a->b``'), '`a\u2192b``');
+    });
+
     test('should protect to end of input for unclosed backtick fence', () {
       const input = '```\na->b\nno closing fence';
       // Everything from ``` to end is protected

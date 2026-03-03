@@ -85,9 +85,14 @@ List<Token> tokenize(String input) {
         tokens.add(token);
         continue;
       }
-      // Not a Markdown code region, consume the character as text
-      textBuffer.write(ch);
-      scanner.advance();
+      // scanMarkdown() backtracked — the run of fence characters does not
+      // start a valid code region.  Consume the entire run atomically so
+      // that no sub-run can be re-examined as a new opener; otherwise a
+      // later, shorter sub-run might find a spurious closing delimiter.
+      while (scanner.peek() == ch) {
+        textBuffer.write(ch);
+        scanner.advance();
+      }
       continue;
     }
 
