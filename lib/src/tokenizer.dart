@@ -282,6 +282,13 @@ class _Scanner {
     // Search for a closing fence: a line that consists of >= openCount fence
     // characters followed by optional whitespace only (CommonMark §4.4–4.5).
     while (!isDone) {
+      // CommonMark §4.4–4.5: closing fence may be indented up to 3 spaces.
+      int indent = 0;
+      while (indent < 3 && !isDone && peek() == ' ') {
+        advance();
+        indent++;
+      }
+
       final lineStart = _index;
       while (!isDone && peek() == fenceChar) {
         advance();
@@ -292,7 +299,7 @@ class _Scanner {
       bool isValidCloser = closeCount >= openCount;
       if (isValidCloser) {
         while (!isDone && peek() != '\n') {
-          if (peek() != ' ' && peek() != '\t') {
+          if (peek() != ' ' && peek() != '\t' && peek() != '\r') {
             isValidCloser = false;
             break;
           }

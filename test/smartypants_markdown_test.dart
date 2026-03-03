@@ -200,6 +200,62 @@ void main() {
     });
   });
 
+  group('Fenced block closer: indented closing fence', () {
+    test('1-space indent before closing fence is accepted', () {
+      const input = '```\na -> b\n ```\nafter';
+      expect(SmartyPants.formatText(input), '```\na -> b\n ```\nafter');
+    });
+
+    test('2-space indent before closing fence is accepted', () {
+      const input = '```\na -> b\n  ```\nafter';
+      expect(SmartyPants.formatText(input), '```\na -> b\n  ```\nafter');
+    });
+
+    test('3-space indent before closing fence is accepted', () {
+      const input = '```\na -> b\n   ```\nafter';
+      expect(SmartyPants.formatText(input), '```\na -> b\n   ```\nafter');
+    });
+
+    test('4-space indent before closing fence is not accepted', () {
+      // 4-space indent exceeds CommonMark limit; block stays open to end
+      const input = '```\na -> b\n    ```';
+      expect(SmartyPants.formatText(input), input);
+    });
+
+    test('prose after indented closer is transformed', () {
+      expect(
+        SmartyPants.formatText('```\ncode\n ```\n"hello"'),
+        '```\ncode\n ```\n\u201Chello\u201D',
+      );
+    });
+  });
+
+  group('Fenced block closer: CRLF line endings', () {
+    test('closing fence with CRLF is accepted (backtick)', () {
+      const input = '```\r\na -> b\r\n```\r\nafter';
+      expect(SmartyPants.formatText(input), input);
+    });
+
+    test('closing fence with CRLF is accepted (tilde)', () {
+      const input = '~~~\r\na -> b\r\n~~~\r\nafter';
+      expect(SmartyPants.formatText(input), input);
+    });
+
+    test('prose after CRLF-terminated closer is transformed', () {
+      expect(
+        SmartyPants.formatText('```\r\ncode\r\n```\r\n"hello"'),
+        '```\r\ncode\r\n```\r\n\u201Chello\u201D',
+      );
+    });
+
+    test('CRLF closer with trailing spaces is accepted', () {
+      expect(
+        SmartyPants.formatText('```\r\ncode\r\n```  \r\n"hi"'),
+        '```\r\ncode\r\n```  \r\n\u201Chi\u201D',
+      );
+    });
+  });
+
   group('Mixed HTML and Markdown', () {
     test('should protect both HTML tags and Markdown inline code', () {
       expect(
