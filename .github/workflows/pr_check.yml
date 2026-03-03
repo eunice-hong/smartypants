@@ -30,8 +30,17 @@ jobs:
       - name: Verify documentation
         run: dart doc --dry-run
 
-      - name: Run tests
-        run: dart test
+      - name: Run tests with coverage
+        run: dart test --coverage=coverage
+
+      - name: Format coverage to lcov
+        run: dart run coverage:format_coverage --lcov --in=coverage --out=coverage/lcov.info --report-on=lib
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./coverage/lcov.info
+          flags: unittests
 
       - name: Install example dependencies
         working-directory: ./example
