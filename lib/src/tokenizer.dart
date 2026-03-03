@@ -235,21 +235,23 @@ class _Scanner {
     }
     final openCount = _index - openStart;
 
-    // Tildes: fewer than 3 do not start a code region — backtrack
+    // Tildes: fewer than 3, or not at a line-start, do not start a fenced
+    // block — backtrack so the tilde run is emitted as plain text.
     if (fenceChar == '~') {
-      if (openCount < 3) {
+      if (openCount < 3 || !_isAtLineStart(start)) {
         _index = start;
         return null;
       }
       return _scanFencedBlock(start, fenceChar, openCount);
     }
 
-    // Backticks: 3 or more start a fenced code block
-    if (openCount >= 3) {
+    // Backticks: 3 or more at a line-start position → fenced code block.
+    // Mid-line runs of 3+ backticks fall through to inline-span scanning.
+    if (openCount >= 3 && _isAtLineStart(start)) {
       return _scanFencedBlock(start, fenceChar, openCount);
     }
 
-    // Backticks 1–2: inline code span
+    // Backticks 1–2 (or 3+ mid-line): inline code span
     // Search for a closing run of exactly the same count
     while (!isDone) {
       if (peek() != '`') {
@@ -350,6 +352,21 @@ class _Scanner {
       (c >= 0x30 && c <= 0x39) || // 0-9
       c == 0x21 ||
       c == 0x3F; // ! ?
+
+  /// Returns true if [pos] is a valid fenced-block opener position:
+  /// either the very start of [_input], or preceded only by up to 3 space
+  /// characters since the last newline (CommonMark §4.4–4.5).
+  bool _isAtLineStart(int pos) {
+    if (pos == 0) return true;
+    int i = pos - 1;
+    int spaces = 0;
+    while (i >= 0 && _input[i] == ' ') {
+      spaces++;
+      i--;
+    }
+    if (spaces > 3) return false;
+    return i < 0 || _input[i] == '\n';
+  }
 
   bool _isSpecialTag(String tagName) {
     const specialTags = {

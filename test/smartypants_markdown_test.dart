@@ -200,6 +200,63 @@ void main() {
     });
   });
 
+  group('Fenced block opener: line-start requirement', () {
+    test('triple-backtick mid-line is treated as inline code span', () {
+      // ```bar``` mid-line → inline span, not a fenced block
+      expect(
+        SmartyPants.formatText('use ```bar``` or "quotes"'),
+        'use ```bar``` or \u201Cquotes\u201D',
+      );
+    });
+
+    test('mid-line triple-backtick span protects its content', () {
+      expect(
+        SmartyPants.formatText('see ```a--b``` here'),
+        'see ```a--b``` here',
+      );
+    });
+
+    test('prose after closed mid-line triple-backtick span is transformed', () {
+      expect(
+        SmartyPants.formatText('x ```code``` "hi"'),
+        'x ```code``` \u201Chi\u201D',
+      );
+    });
+
+    test('unclosed mid-line triple-backtick backtracks and transforms', () {
+      // No matching closer → backtrack, plain text, arrow transformed
+      expect(
+        SmartyPants.formatText('x ```a->b'),
+        'x ```a\u2192b',
+      );
+    });
+
+    test('triple-backtick after 4-space indent becomes inline span', () {
+      // 4 spaces exceeds CommonMark indent limit; not a fenced block opener.
+      // Falls through to inline span: content is protected (arrow unchanged),
+      // post-span prose is transformed (smart quote applied), and leading
+      // whitespace is collapsed by whitespace normalization.
+      expect(
+        SmartyPants.formatText('    ```\na->b\n```\n"hi"'),
+        ' ```\na->b\n``` \u201Chi\u201D',
+      );
+    });
+
+    test('triple-tilde mid-line backtracks to plain text', () {
+      expect(
+        SmartyPants.formatText('x ~~~a->b'),
+        'x ~~~a\u2192b',
+      );
+    });
+
+    test('line-start triple-backtick fence still works normally', () {
+      expect(
+        SmartyPants.formatText('```\na->b\n```\n"hi"'),
+        '```\na->b\n```\n\u201Chi\u201D',
+      );
+    });
+  });
+
   group('Fenced block closer: indented closing fence', () {
     test('1-space indent before closing fence is accepted', () {
       const input = '```\na -> b\n ```\nafter';
