@@ -108,6 +108,12 @@ class _Scanner {
   final String _input;
   int _index = 0;
 
+  /// Backtick counts for which a left-to-right scan has already reached EOF
+  /// without finding a matching closer.  Once a count N is exhausted, no run
+  /// of N backticks exists anywhere after the current scanner position, so
+  /// future inline-span openers of the same count can be rejected in O(1).
+  final Set<int> _noCloserPastEnd = {};
+
   _Scanner(this._input);
 
   bool get isDone => _index >= _input.length;
@@ -273,7 +279,17 @@ class _Scanner {
     }
 
     // Backticks 1–2 (or 3+ mid-line): inline code span
-    // Search for a closing run of exactly the same count
+    // Search for a closing run of exactly the same count.
+    //
+    // Short-circuit: if a previous scan already reached EOF without finding a
+    // closer of this count, no such run exists anywhere after this point
+    // either (we scan left-to-right).  Reject in O(1) to keep overall
+    // tokenization O(n) even for inputs with many unmatched backtick runs.
+    if (_noCloserPastEnd.contains(openCount)) {
+      _index = start;
+      return null;
+    }
+
     while (!isDone) {
       if (peek() != '`') {
         advance();
@@ -290,7 +306,8 @@ class _Scanner {
       // Count mismatch — keep scanning
     }
 
-    // No closing delimiter found — backtrack and treat as plain text
+    // No closing delimiter found — record count as exhausted, then backtrack.
+    _noCloserPastEnd.add(openCount);
     _index = start;
     return null;
   }

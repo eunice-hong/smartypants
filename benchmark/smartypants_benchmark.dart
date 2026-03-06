@@ -12,6 +12,11 @@ void main() {
   runBenchmark('HTML-heavy', _htmlInput, iterations: 1000);
   runBenchmark('Markdown-light', _markdownLightInput, iterations: 1000);
   runBenchmark('Markdown-heavy', _markdownHeavyInput, iterations: 1000);
+  runBenchmark(
+    'Adversarial unmatched backticks (O(n) check)',
+    _adversarialUnmatchedBackticks,
+    iterations: 100,
+  );
 }
 
 void runBenchmark(
@@ -43,6 +48,14 @@ void runBenchmark(
 // ---------------------------------------------------------------------------
 // Benchmark inputs
 // ---------------------------------------------------------------------------
+
+/// 500 unmatched backtick runs of varying lengths separated by prose.
+/// Without the _noCloserPastEnd short-circuit this would be O(n²); with it,
+/// each distinct count is scanned at most once → O(n).
+final _adversarialUnmatchedBackticks = List.generate(
+  500,
+  (i) => '${'`' * (i % 5 + 1)} a->b',
+).join(' ');
 
 const _smallInput = 'She said "Hello, world!" -- it\'s a great day... '
     'and the result is >= 10 or <= 5, so -> proceed!';
