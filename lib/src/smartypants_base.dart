@@ -5,6 +5,72 @@ import 'cjk_utils.dart';
 
 import 'tokenizer.dart';
 
+/// Encapsulates the opening and closing quote characters for a typographic style.
+///
+/// Use the static constants ([english], [french], [german], [cjkCornerBracket])
+/// for common presets, or construct a custom instance for other conventions.
+///
+/// ```dart
+/// // Use a preset
+/// const style = QuoteStyle.french; // « »
+///
+/// // Custom style
+/// const style = QuoteStyle(open: '[', close: ']');
+/// ```
+class QuoteStyle {
+  /// The primary opening quote character.
+  final String open;
+
+  /// The primary closing quote character.
+  final String close;
+
+  /// The secondary (nested) opening quote character, if any.
+  final String? secondaryOpen;
+
+  /// The secondary (nested) closing quote character, if any.
+  final String? secondaryClose;
+
+  /// Creates a [QuoteStyle].
+  const QuoteStyle({
+    required this.open,
+    required this.close,
+    this.secondaryOpen,
+    this.secondaryClose,
+  });
+
+  /// English curly quotes: `"` / `"` (U+201C, U+201D).
+  static const QuoteStyle english = QuoteStyle(
+    open: '\u201C',
+    close: '\u201D',
+    secondaryOpen: '\u2018',
+    secondaryClose: '\u2019',
+  );
+
+  /// French guillemet quotes: `«` / `»` (U+00AB, U+00BB).
+  static const QuoteStyle french = QuoteStyle(
+    open: '\u00AB',
+    close: '\u00BB',
+    secondaryOpen: '\u2039',
+    secondaryClose: '\u203A',
+  );
+
+  /// German low-high quotes: `„` / `"` (U+201E, U+201C).
+  static const QuoteStyle german = QuoteStyle(
+    open: '\u201E',
+    close: '\u201C',
+    secondaryOpen: '\u201A',
+    secondaryClose: '\u2018',
+  );
+
+  /// CJK corner bracket quotes: `「` / `」` (U+300C, U+300D).
+  static const QuoteStyle cjkCornerBracket = QuoteStyle(
+    open: '\u300C',
+    close: '\u300D',
+    secondaryOpen: '\u300E',
+    secondaryClose: '\u300F',
+  );
+}
+
 /// Supported locale presets for typography transformations.
 ///
 /// Each locale applies language-specific rules on top of the base
@@ -24,6 +90,12 @@ enum SmartyPantsLocale {
 
   /// Simplified Chinese. Adds CJK ellipsis normalization and angle bracket quotation.
   zhHans,
+
+  /// French. Uses guillemet quotes (« »).
+  fr,
+
+  /// German. Uses low-high quotes („ ").
+  de,
 }
 
 /// Configuration for [SmartyPants.formatText] transformations.
@@ -129,6 +201,17 @@ class SmartyPantsConfig {
   /// Defaults to `true`.
   final bool cjkAngleBrackets;
 
+  /// A custom quote style that overrides the locale default when [quotes] is `true`.
+  ///
+  /// When non-null, this takes precedence over the quote style resolved from
+  /// [locale]. Useful for locales not covered by [SmartyPantsLocale] or when
+  /// a non-standard convention is required.
+  ///
+  /// Resolution order: [customQuoteStyle] > locale default.
+  ///
+  /// Defaults to `null` (use locale default).
+  final QuoteStyle? customQuoteStyle;
+
   /// Creates a [SmartyPantsConfig].
   ///
   /// All parameters are optional and default to their documented values.
@@ -143,6 +226,7 @@ class SmartyPantsConfig {
     this.whitespaceNormalization = true,
     this.cjkEllipsisNormalization = true,
     this.cjkAngleBrackets = true,
+    this.customQuoteStyle,
   });
 
   /// Returns a copy of this config with the given fields replaced.
@@ -157,6 +241,7 @@ class SmartyPantsConfig {
     bool? whitespaceNormalization,
     bool? cjkEllipsisNormalization,
     bool? cjkAngleBrackets,
+    QuoteStyle? customQuoteStyle,
   }) {
     return SmartyPantsConfig(
       smart: smart ?? this.smart,
@@ -171,6 +256,7 @@ class SmartyPantsConfig {
       cjkEllipsisNormalization:
           cjkEllipsisNormalization ?? this.cjkEllipsisNormalization,
       cjkAngleBrackets: cjkAngleBrackets ?? this.cjkAngleBrackets,
+      customQuoteStyle: customQuoteStyle ?? this.customQuoteStyle,
     );
   }
 }
@@ -184,6 +270,22 @@ class SmartyPantsConfig {
 class SmartyPants {
   static final _quotePattern = RegExp(r'"([^"]+)"');
   static final _whitespacePattern = RegExp(r'\s+');
+
+  static QuoteStyle _quoteStyleForLocale(SmartyPantsLocale locale) {
+    switch (locale) {
+      case SmartyPantsLocale.fr:
+        return QuoteStyle.french;
+      case SmartyPantsLocale.de:
+        return QuoteStyle.german;
+      case SmartyPantsLocale.ko:
+      case SmartyPantsLocale.ja:
+      case SmartyPantsLocale.zhHant:
+        return QuoteStyle.cjkCornerBracket;
+      case SmartyPantsLocale.zhHans:
+      case SmartyPantsLocale.en:
+        return QuoteStyle.english;
+    }
+  }
 
   /// Transforms [input] into typographically correct text.
   ///
@@ -348,9 +450,11 @@ class SmartyPants {
     // Base transformations
 
     if (config.quotes) {
+      final style =
+          config.customQuoteStyle ?? _quoteStyleForLocale(config.locale);
       output = output.replaceAllMapped(
         _quotePattern,
-        (match) => '\u201C${match[1]}\u201D',
+        (match) => '${style.open}${match[1]}${style.close}',
       );
       output = output.replaceAll("'", '\u2019');
     }

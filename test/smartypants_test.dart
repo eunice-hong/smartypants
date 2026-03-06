@@ -247,6 +247,96 @@ void main() {
     });
   });
 
+  group('Locale-specific quote styles', () {
+    test('en locale (default) produces English curly quotes', () {
+      expect(
+        SmartyPants.formatText('"Hello"'),
+        '\u201CHello\u201D',
+      );
+    });
+
+    test('fr locale produces guillemet quotes', () {
+      const config = SmartyPantsConfig(locale: SmartyPantsLocale.fr);
+      expect(
+        SmartyPants.formatText('"Bonjour"', config: config),
+        '\u00ABBonjour\u00BB',
+      );
+    });
+
+    test('de locale produces low-high quotes', () {
+      const config = SmartyPantsConfig(locale: SmartyPantsLocale.de);
+      expect(
+        SmartyPants.formatText('"Hallo"', config: config),
+        '\u201EHallo\u201C',
+      );
+    });
+
+    test('ko locale produces CJK corner bracket quotes', () {
+      const config = SmartyPantsConfig(locale: SmartyPantsLocale.ko);
+      expect(
+        SmartyPants.formatText('"안녕"', config: config),
+        '\u300C안녕\u300D',
+      );
+    });
+
+    test('ja locale produces CJK corner bracket quotes', () {
+      const config = SmartyPantsConfig(locale: SmartyPantsLocale.ja);
+      expect(
+        SmartyPants.formatText('"こんにちは"', config: config),
+        '\u300Cこんにちは\u300D',
+      );
+    });
+
+    test('zhHant locale produces CJK corner bracket quotes', () {
+      const config = SmartyPantsConfig(locale: SmartyPantsLocale.zhHant);
+      expect(
+        SmartyPants.formatText('"你好"', config: config),
+        '\u300C你好\u300D',
+      );
+    });
+
+    test('zhHans locale produces English curly quotes', () {
+      const config = SmartyPantsConfig(locale: SmartyPantsLocale.zhHans);
+      expect(
+        SmartyPants.formatText('"你好"', config: config),
+        '\u201C你好\u201D',
+      );
+    });
+
+    test('customQuoteStyle overrides locale default', () {
+      const config = SmartyPantsConfig(
+        locale: SmartyPantsLocale.fr,
+        customQuoteStyle: QuoteStyle.english,
+      );
+      expect(
+        SmartyPants.formatText('"Hi"', config: config),
+        '\u201CHi\u201D',
+      );
+    });
+
+    test('customQuoteStyle accepts arbitrary characters', () {
+      const config = SmartyPantsConfig(
+        customQuoteStyle: QuoteStyle(open: '[', close: ']'),
+      );
+      expect(
+        SmartyPants.formatText('"Hi"', config: config),
+        '[Hi]',
+      );
+    });
+
+    test('copyWith preserves customQuoteStyle', () {
+      const original = SmartyPantsConfig(
+        customQuoteStyle: QuoteStyle.french,
+      );
+      final copy = original.copyWith(dashes: false);
+      expect(copy.customQuoteStyle, QuoteStyle.french);
+      expect(
+        SmartyPants.formatText('"Hi"', config: copy),
+        '\u00ABHi\u00BB',
+      );
+    });
+  });
+
   group('SmartyPantsConfig default backward compatibility', () {
     test('default config produces same output as explicit all-true config', () {
       const inputs = [

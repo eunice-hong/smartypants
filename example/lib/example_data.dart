@@ -225,6 +225,40 @@ const List<ExampleCategory> exampleCategories = [
     ],
   ),
   ExampleCategory(
+    name: 'Locale Quotes',
+    icon: '«»',
+    summary: 'Locale-specific typographic quote styles',
+    items: [
+      ExampleItem(
+        description: 'French guillemets (« »)',
+        input: '"Bonjour le monde!"',
+        config: SmartyPantsConfig(locale: SmartyPantsLocale.fr),
+      ),
+      ExampleItem(
+        description: 'German low-high quotes („ ")',
+        input: '"Hallo Welt!"',
+        config: SmartyPantsConfig(locale: SmartyPantsLocale.de),
+      ),
+      ExampleItem(
+        description: 'Korean CJK corner brackets (「 」)',
+        input: '"안녕하세요"',
+        config: SmartyPantsConfig(locale: SmartyPantsLocale.ko),
+      ),
+      ExampleItem(
+        description: 'Japanese CJK corner brackets (「 」)',
+        input: '"こんにちは"',
+        config: SmartyPantsConfig(locale: SmartyPantsLocale.ja),
+      ),
+      ExampleItem(
+        description: 'Custom quote style ([ ])',
+        input: '"Custom style"',
+        config: SmartyPantsConfig(
+          customQuoteStyle: QuoteStyle(open: '[', close: ']'),
+        ),
+      ),
+    ],
+  ),
+  ExampleCategory(
     name: 'Markdown Support',
     icon: '`',
     summary: 'Code spans and fenced blocks are preserved during transformation',
