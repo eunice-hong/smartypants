@@ -86,12 +86,25 @@ List<Token> tokenize(String input) {
         continue;
       }
       // scanMarkdown() backtracked — the run of fence characters does not
-      // start a valid code region.  Consume the entire run atomically so
-      // that no sub-run can be re-examined as a new opener; otherwise a
-      // later, shorter sub-run might find a spurious closing delimiter.
-      while (scanner.peek() == ch) {
+      // start a valid code region.
+      //
+      // When the rejection was caused by the first backtick being an escaped
+      // literal (odd preceding backslashes, CommonMark §6.1), only that one
+      // backtick is consumed.  Subsequent backticks in the same run are not
+      // escaped and may open their own code span.
+      //
+      // In all other cases (no closer, tilde not at line-start, etc.) the
+      // entire run is consumed atomically so that no sub-run can be
+      // re-examined as a new opener; otherwise a later, shorter sub-run might
+      // find a spurious closing delimiter.
+      if (ch == '`' && scanner.isCurrentBacktickEscaped) {
         textBuffer.write(ch);
         scanner.advance();
+      } else {
+        while (scanner.peek() == ch) {
+          textBuffer.write(ch);
+          scanner.advance();
+        }
       }
       continue;
     }
@@ -119,6 +132,21 @@ class _Scanner {
   bool get isDone => _index >= _input.length;
 
   String peek() => isDone ? '' : _input[_index];
+
+  /// Returns true when the character at the current position is a backtick
+  /// preceded by an odd number of backslashes (CommonMark §6.1 escaped
+  /// literal).  Used by [tokenize] to decide whether to consume only the
+  /// single escaped backtick rather than the entire run.
+  bool get isCurrentBacktickEscaped {
+    if (_index >= _input.length || _input[_index] != '`') return false;
+    int count = 0;
+    int i = _index - 1;
+    while (i >= 0 && _input[i] == '\\') {
+      count++;
+      i--;
+    }
+    return count.isOdd;
+  }
 
   Token? scanTag() {
     // Save state to backtrack if not a valid tag

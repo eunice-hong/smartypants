@@ -406,4 +406,49 @@ void main() {
       );
     });
   });
+
+  group('Escaped opener followed by unescaped backtick (P2)', () {
+    // When scanMarkdown() rejects a backtick run because the *first* backtick
+    // is escaped, only that one backtick should be consumed as literal text.
+    // The immediately following unescaped backtick(s) must still be eligible
+    // to open their own inline code span.
+
+    test('tokenize: escaped opener leaves next backtick as a code-span opener',
+        () {
+      // Input: \``code`
+      // \` → escaped literal backtick (text)
+      // `code` → inline code span (markdown)
+      expect(tokenize(r'\``code`'), [
+        Token(TokenType.text, r'\`'),
+        Token(TokenType.markdown, '`code`'),
+      ]);
+    });
+
+    test('arrow inside span preceded by escaped backtick is protected', () {
+      // \` is a literal backtick; `a->b` is a code span — arrow stays as ->.
+      expect(SmartyPants.formatText(r'\``a->b`'), r'\``a->b`');
+    });
+
+    test('without following span, escaped backtick prose arrow is transformed',
+        () {
+      // \`a->b` — no valid code span forms; arrow is in plain text → →.
+      expect(SmartyPants.formatText(r'\`a->b`'), contains('\u2192'));
+    });
+
+    test('double-escaped opener (even backslashes) consumes whole run', () {
+      // \\``code` — two backslashes cancel out, backtick run is NOT escaped.
+      // openCount=2, no double-backtick closer → whole run consumed as text.
+      // Arrow in prose IS transformed.
+      expect(SmartyPants.formatText(r'\\``a->b`'), contains('\u2192'));
+    });
+
+    test('triple-backslash escaped opener still leaves next backtick free', () {
+      // \\\``code` — three backslashes: first pair cancel, third escapes the
+      // first backtick.  Second backtick is unescaped → opens code span.
+      expect(tokenize(r'\\\``code`'), [
+        Token(TokenType.text, r'\\\`'),
+        Token(TokenType.markdown, '`code`'),
+      ]);
+    });
+  });
 }
