@@ -272,6 +272,35 @@ class SmartyPants {
   static final _quotePattern = RegExp(r'"([^"]+)"');
   static final _whitespacePattern = RegExp(r'\s+');
 
+  // Sentinel characters used by the HTML-masking / marker pipeline in
+  // [formatText].  Any user-supplied string (e.g. a custom quote delimiter)
+  // that is inserted *after* masking must have these characters escaped so that
+  // the two restore loops treat them as literal output rather than control
+  // signals.
+  static const _escapeChar = '\uE000'; // first-loop escape prefix
+  static const _placeholderChar = '\uFFFC'; // HTML-token placeholder
+
+  /// Escapes reserved sentinel characters in [s] so they survive both restore
+  /// loops in [formatText] as literal characters.
+  ///
+  /// Escape order matters — each sentinel is escaped before a new occurrence
+  /// of a later sentinel could be introduced.
+  static String _escapeSentinels(
+    String s,
+    String doubleAngleMarker,
+    String markerEscape,
+  ) {
+    return s
+        // Second-loop sentinels (markerEscape before doubleAngleMarker so the
+        // newly introduced markerEscape doesn't itself get doubled).
+        .replaceAll(markerEscape, '$markerEscape$markerEscape')
+        .replaceAll(doubleAngleMarker, '$markerEscape$doubleAngleMarker')
+        // First-loop sentinels (_escapeChar before _placeholderChar for the
+        // same reason).
+        .replaceAll(_escapeChar, '$_escapeChar$_escapeChar')
+        .replaceAll(_placeholderChar, '$_escapeChar$_placeholderChar');
+  }
+
   static QuoteStyle _quoteStyleForLocale(SmartyPantsLocale locale) {
     switch (locale) {
       case SmartyPantsLocale.fr:
@@ -484,10 +513,14 @@ class SmartyPants {
     if (config.quotes) {
       final style =
           config.customQuoteStyle ?? _quoteStyleForLocale(config.locale);
+      final open =
+          _escapeSentinels(style.open, doubleAngleMarker, markerEscape);
+      final close =
+          _escapeSentinels(style.close, doubleAngleMarker, markerEscape);
       output = output.replaceAll("'", '\u2019');
       output = output.replaceAllMapped(
         _quotePattern,
-        (match) => '${style.open}${match[1]}${style.close}',
+        (match) => '$open${match[1]}$close',
       );
     }
 

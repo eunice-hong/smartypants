@@ -371,6 +371,70 @@ void main() {
       );
     });
 
+    test(
+        'customQuoteStyle delimiter containing \\uFFFC (HTML placeholder) '
+        'is preserved literally', () {
+      // \uFFFC is the HTML-token placeholder used internally; a delimiter
+      // containing it must not be consumed by the restore loop.
+      const config = SmartyPantsConfig(
+        customQuoteStyle: QuoteStyle(open: '\uFFFC', close: '\uFFFC'),
+      );
+      expect(
+        SmartyPants.formatText('"x"', config: config),
+        '\uFFFCx\uFFFC',
+      );
+    });
+
+    test(
+        'customQuoteStyle delimiter containing \\uE001 (double-angle marker) '
+        'is preserved literally', () {
+      const config = SmartyPantsConfig(
+        customQuoteStyle: QuoteStyle(open: '\uE001', close: '\uE001'),
+      );
+      expect(
+        SmartyPants.formatText('"x"', config: config),
+        '\uE001x\uE001',
+      );
+    });
+
+    test(
+        'customQuoteStyle delimiter containing \\uE002 (marker escape) '
+        'is preserved literally', () {
+      const config = SmartyPantsConfig(
+        customQuoteStyle: QuoteStyle(open: '\uE002', close: '\uE002'),
+      );
+      expect(
+        SmartyPants.formatText('"x"', config: config),
+        '\uE002x\uE002',
+      );
+    });
+
+    test(
+        'customQuoteStyle delimiter containing \\uE000 (escape char) '
+        'is preserved literally', () {
+      const config = SmartyPantsConfig(
+        customQuoteStyle: QuoteStyle(open: '\uE000', close: '\uE000'),
+      );
+      expect(
+        SmartyPants.formatText('"x"', config: config),
+        '\uE000x\uE000',
+      );
+    });
+
+    test(
+        'customQuoteStyle sentinel delimiters are preserved alongside HTML tags',
+        () {
+      // \uFFFC is the HTML-placeholder sentinel; HTML tags must still be
+      // restored correctly when the delimiter contains it.
+      const config = SmartyPantsConfig(
+        customQuoteStyle: QuoteStyle(open: '\uFFFC', close: '\uFFFC'),
+      );
+      expect(
+        SmartyPants.formatText('<b>"x"</b>', config: config),
+        '<b>\uFFFCx\uFFFC</b>',
+      );
+    });
+
     test('copyWith(customQuoteStyle: null) clears custom style', () {
       const original = SmartyPantsConfig(
         locale: SmartyPantsLocale.fr,
