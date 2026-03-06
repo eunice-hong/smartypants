@@ -453,11 +453,11 @@ class SmartyPants {
     if (config.quotes) {
       final style =
           config.customQuoteStyle ?? _quoteStyleForLocale(config.locale);
+      output = output.replaceAll("'", '\u2019');
       output = output.replaceAllMapped(
         _quotePattern,
         (match) => '${style.open}${match[1]}${style.close}',
       );
-      output = output.replaceAll("'", '\u2019');
     }
 
     if (config.dashes) {

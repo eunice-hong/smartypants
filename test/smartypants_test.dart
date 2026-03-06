@@ -336,6 +336,17 @@ void main() {
       );
     });
 
+    test('custom single-quote style is not clobbered by apostrophe replacement',
+        () {
+      const config = SmartyPantsConfig(
+        customQuoteStyle: QuoteStyle(open: "'", close: "'"),
+      );
+      expect(
+        SmartyPants.formatText('"Hi"', config: config),
+        "'Hi'",
+      );
+    });
+
     test('copyWith(customQuoteStyle: null) clears custom style', () {
       const original = SmartyPantsConfig(
         locale: SmartyPantsLocale.fr,
