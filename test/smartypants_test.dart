@@ -341,7 +341,7 @@ void main() {
         locale: SmartyPantsLocale.fr,
         customQuoteStyle: QuoteStyle.english,
       );
-      final cleared = original.copyWith(customQuoteStyle: null);
+      final cleared = original.copyWith(customQuoteStyle: () => null);
       expect(cleared.customQuoteStyle, isNull);
       // After clearing, locale-driven quoting (fr → «») takes over.
       expect(

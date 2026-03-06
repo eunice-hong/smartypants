@@ -125,11 +125,6 @@ enum SmartyPantsLocale {
 /// // Korean locale with CJK transformations
 /// const korean = SmartyPantsConfig(locale: SmartyPantsLocale.ko);
 /// ```
-// Sentinel used by [SmartyPantsConfig.copyWith] to distinguish "not provided"
-// from an explicit `null` for the nullable [SmartyPantsConfig.customQuoteStyle]
-// parameter.
-const Object _kUnset = Object();
-
 class SmartyPantsConfig {
   /// Whether smart typography transformations are applied.
   ///
@@ -246,7 +241,7 @@ class SmartyPantsConfig {
     bool? whitespaceNormalization,
     bool? cjkEllipsisNormalization,
     bool? cjkAngleBrackets,
-    Object? customQuoteStyle = _kUnset,
+    QuoteStyle? Function()? customQuoteStyle,
   }) {
     return SmartyPantsConfig(
       smart: smart ?? this.smart,
@@ -261,9 +256,8 @@ class SmartyPantsConfig {
       cjkEllipsisNormalization:
           cjkEllipsisNormalization ?? this.cjkEllipsisNormalization,
       cjkAngleBrackets: cjkAngleBrackets ?? this.cjkAngleBrackets,
-      customQuoteStyle: identical(customQuoteStyle, _kUnset)
-          ? this.customQuoteStyle
-          : customQuoteStyle as QuoteStyle?,
+      customQuoteStyle:
+          customQuoteStyle == null ? this.customQuoteStyle : customQuoteStyle(),
     );
   }
 }
