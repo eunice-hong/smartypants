@@ -324,7 +324,7 @@ void main() {
       );
     });
 
-    test('copyWith preserves customQuoteStyle', () {
+    test('copyWith preserves customQuoteStyle when not provided', () {
       const original = SmartyPantsConfig(
         customQuoteStyle: QuoteStyle.french,
       );
@@ -332,6 +332,20 @@ void main() {
       expect(copy.customQuoteStyle, QuoteStyle.french);
       expect(
         SmartyPants.formatText('"Hi"', config: copy),
+        '\u00ABHi\u00BB',
+      );
+    });
+
+    test('copyWith(customQuoteStyle: null) clears custom style', () {
+      const original = SmartyPantsConfig(
+        locale: SmartyPantsLocale.fr,
+        customQuoteStyle: QuoteStyle.english,
+      );
+      final cleared = original.copyWith(customQuoteStyle: null);
+      expect(cleared.customQuoteStyle, isNull);
+      // After clearing, locale-driven quoting (fr → «») takes over.
+      expect(
+        SmartyPants.formatText('"Hi"', config: cleared),
         '\u00ABHi\u00BB',
       );
     });
