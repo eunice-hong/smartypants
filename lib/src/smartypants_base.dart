@@ -450,16 +450,6 @@ class SmartyPants {
 
     // Base transformations
 
-    if (config.quotes) {
-      final style =
-          config.customQuoteStyle ?? _quoteStyleForLocale(config.locale);
-      output = output.replaceAll("'", '\u2019');
-      output = output.replaceAllMapped(
-        _quotePattern,
-        (match) => '${style.open}${match[1]}${style.close}',
-      );
-    }
-
     if (config.dashes) {
       output = output.replaceAll('---', '\u2014');
       output = output.replaceAll('--', '\u2013');
@@ -486,6 +476,19 @@ class SmartyPants {
           .replaceAll('->', '\u2192')
           .replaceAll('<-', '\u2190')
           .replaceAll('=>', '\u21D2');
+    }
+
+    // Quotes are applied last so custom delimiters are not rewritten by
+    // subsequent passes (e.g. a delimiter containing "--" would otherwise
+    // be converted to an en dash by the dashes pass above).
+    if (config.quotes) {
+      final style =
+          config.customQuoteStyle ?? _quoteStyleForLocale(config.locale);
+      output = output.replaceAll("'", '\u2019');
+      output = output.replaceAllMapped(
+        _quotePattern,
+        (match) => '${style.open}${match[1]}${style.close}',
+      );
     }
 
     return output;

@@ -347,6 +347,30 @@ void main() {
       );
     });
 
+    test(
+        'customQuoteStyle delimiter containing "--" is not mutated by dash pass',
+        () {
+      const config = SmartyPantsConfig(
+        customQuoteStyle: QuoteStyle(open: '--', close: '--'),
+      );
+      expect(
+        SmartyPants.formatText('"x"', config: config),
+        '--x--',
+      );
+    });
+
+    test(
+        'customQuoteStyle delimiter containing "->" is not mutated by arrow pass',
+        () {
+      const config = SmartyPantsConfig(
+        customQuoteStyle: QuoteStyle(open: '->', close: '<-'),
+      );
+      expect(
+        SmartyPants.formatText('"x"', config: config),
+        '->x<-',
+      );
+    });
+
     test('copyWith(customQuoteStyle: null) clears custom style', () {
       const original = SmartyPantsConfig(
         locale: SmartyPantsLocale.fr,
