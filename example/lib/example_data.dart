@@ -224,4 +224,39 @@ const List<ExampleCategory> exampleCategories = [
       ),
     ],
   ),
+  ExampleCategory(
+    name: 'Markdown Support',
+    icon: '`',
+    summary: 'Code spans and fenced blocks are preserved during transformation',
+    items: [
+      ExampleItem(
+        description: 'Inline code (single backtick)',
+        input: 'Use `a->b` to indicate direction.',
+      ),
+      ExampleItem(
+        description: 'Inline code (double backtick)',
+        input: 'Check ``x != y`` for inequality.',
+      ),
+      ExampleItem(
+        description: 'Inline code with backtick inside',
+        input: 'Try `` ` `` as a literal backtick.',
+      ),
+      ExampleItem(
+        description: 'Fenced code block (backticks)',
+        input: '```\nx != y\na->b\n```',
+      ),
+      ExampleItem(
+        description: 'Fenced code block (tildes)',
+        input: '~~~\nx != y\na->b\n~~~',
+      ),
+      ExampleItem(
+        description: 'Mixed prose and code',
+        input: '"Smart quotes" outside, `a->b` inside.',
+      ),
+      ExampleItem(
+        description: 'Multiple inline spans',
+        input: 'Use `->` for arrow and `--` for dash.',
+      ),
+    ],
+  ),
 ];

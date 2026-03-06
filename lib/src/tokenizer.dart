@@ -1,10 +1,15 @@
-/// The type of a [Token]: either raw text or an HTML tag/element.
+/// The type of a [Token]: either raw text, an HTML tag/element, or a Markdown
+/// code region.
 enum TokenType {
   /// Plain text content that is not part of an HTML tag.
   text,
 
   /// An HTML tag, comment, or special element (e.g. `<b>`, `<!-- ... -->`).
   html,
+
+  /// A Markdown inline code span (e.g. `` `code` ``, ` ``code`` `) or fenced
+  /// code block (e.g. ` ``` `, `~~~`). Content inside is never transformed.
+  markdown,
 }
 
 /// A single unit produced by [tokenize], representing either a span of plain
@@ -35,12 +40,16 @@ class Token {
 }
 
 /// Splits [input] into a list of [Token]s, alternating between plain-text
-/// spans and HTML tags/elements.
+/// spans, HTML tags/elements, and Markdown code regions.
 ///
-/// Special tags (`<script>`, `<style>`, `<pre>`, `<code>`, `<kbd>`,
+/// Special HTML tags (`<script>`, `<style>`, `<pre>`, `<code>`, `<kbd>`,
 /// `<math>`, `<textarea>`) and their inner content are returned as a single
 /// [TokenType.html] token so that SmartyPants transformations are not applied
 /// inside them.
+///
+/// Markdown inline code spans (`` `code` ``, ` ``code`` `) and fenced code
+/// blocks (` ``` `, `~~~`) are returned as [TokenType.markdown] tokens and are
+/// likewise excluded from transformations.
 List<Token> tokenize(String input) {
   final tokens = <Token>[];
   final scanner = _Scanner(input);
@@ -54,7 +63,9 @@ List<Token> tokenize(String input) {
   }
 
   while (!scanner.isDone) {
-    if (scanner.peek() == '<') {
+    final ch = scanner.peek();
+
+    if (ch == '<') {
       final token = scanner.scanTag();
       if (token != null) {
         flushText();
@@ -64,6 +75,37 @@ List<Token> tokenize(String input) {
       // Not a tag, consume '<' as text
       textBuffer.write('<');
       scanner.advance();
+      continue;
+    }
+
+    if (ch == '`' || ch == '~') {
+      final token = scanner.scanMarkdown();
+      if (token != null) {
+        flushText();
+        tokens.add(token);
+        continue;
+      }
+      // scanMarkdown() backtracked — the run of fence characters does not
+      // start a valid code region.
+      //
+      // When the rejection was caused by the first backtick being an escaped
+      // literal (odd preceding backslashes, CommonMark §6.1), only that one
+      // backtick is consumed.  Subsequent backticks in the same run are not
+      // escaped and may open their own code span.
+      //
+      // In all other cases (no closer, tilde not at line-start, etc.) the
+      // entire run is consumed atomically so that no sub-run can be
+      // re-examined as a new opener; otherwise a later, shorter sub-run might
+      // find a spurious closing delimiter.
+      if (ch == '`' && scanner.isCurrentBacktickEscaped) {
+        textBuffer.write(ch);
+        scanner.advance();
+      } else {
+        while (scanner.peek() == ch) {
+          textBuffer.write(ch);
+          scanner.advance();
+        }
+      }
       continue;
     }
 
@@ -79,11 +121,32 @@ class _Scanner {
   final String _input;
   int _index = 0;
 
+  /// Backtick counts for which a left-to-right scan has already reached EOF
+  /// without finding a matching closer.  Once a count N is exhausted, no run
+  /// of N backticks exists anywhere after the current scanner position, so
+  /// future inline-span openers of the same count can be rejected in O(1).
+  final Set<int> _noCloserPastEnd = {};
+
   _Scanner(this._input);
 
   bool get isDone => _index >= _input.length;
 
   String peek() => isDone ? '' : _input[_index];
+
+  /// Returns true when the character at the current position is a backtick
+  /// preceded by an odd number of backslashes (CommonMark §6.1 escaped
+  /// literal).  Used by [tokenize] to decide whether to consume only the
+  /// single escaped backtick rather than the entire run.
+  bool get isCurrentBacktickEscaped {
+    if (_index >= _input.length || _input[_index] != '`') return false;
+    int count = 0;
+    int i = _index - 1;
+    while (i >= 0 && _input[i] == '\\') {
+      count++;
+      i--;
+    }
+    return count.isOdd;
+  }
 
   Token? scanTag() {
     // Save state to backtrack if not a valid tag
@@ -181,10 +244,149 @@ class _Scanner {
 
   String scanText() {
     final start = _index;
-    while (!isDone && peek() != '<') {
+    while (!isDone && peek() != '<' && peek() != '`' && peek() != '~') {
       advance();
     }
     return _input.substring(start, _index);
+  }
+
+  /// Attempts to scan a Markdown inline code span or fenced code block
+  /// starting at the current position.
+  ///
+  /// Returns a [TokenType.markdown] token on success, or `null` if the
+  /// current position does not begin a valid Markdown code region (in which
+  /// case the scanner position is restored to where it was before the call).
+  Token? scanMarkdown() {
+    final start = _index;
+    final fenceChar = peek();
+
+    if (fenceChar != '`' && fenceChar != '~') return null;
+
+    // P2: A backtick run preceded by an odd number of backslashes begins with
+    // an escaped literal (CommonMark §6.1) and must not open a code region.
+    if (fenceChar == '`') {
+      int numBackslashes = 0;
+      int i = start - 1;
+      while (i >= 0 && _input[i] == '\\') {
+        numBackslashes++;
+        i--;
+      }
+      if (numBackslashes % 2 == 1) {
+        _index = start;
+        return null;
+      }
+    }
+
+    // Count consecutive opening characters
+    final openStart = _index;
+    while (!isDone && peek() == fenceChar) {
+      advance();
+    }
+    final openCount = _index - openStart;
+
+    // Tildes: fewer than 3, or not at a line-start, do not start a fenced
+    // block — backtrack so the tilde run is emitted as plain text.
+    if (fenceChar == '~') {
+      if (openCount < 3 || !_isAtLineStart(start)) {
+        _index = start;
+        return null;
+      }
+      return _scanFencedBlock(start, fenceChar, openCount);
+    }
+
+    // Backticks: 3 or more at a line-start position → fenced code block,
+    // but only when the info string contains no backticks (CommonMark §4.4:
+    // backtick-fence info strings must not include backtick characters).
+    // Mid-line runs, or runs with a backtick-containing info string, fall
+    // through to inline-span scanning.
+    if (openCount >= 3 && _isAtLineStart(start)) {
+      if (!_infoStringHasBacktick(_index)) {
+        return _scanFencedBlock(start, fenceChar, openCount);
+      }
+      // Info string contains a backtick — not a valid fenced block opener.
+    }
+
+    // Backticks 1–2 (or 3+ mid-line): inline code span
+    // Search for a closing run of exactly the same count.
+    //
+    // Short-circuit: if a previous scan already reached EOF without finding a
+    // closer of this count, no such run exists anywhere after this point
+    // either (we scan left-to-right).  Reject in O(1) to keep overall
+    // tokenization O(n) even for inputs with many unmatched backtick runs.
+    if (_noCloserPastEnd.contains(openCount)) {
+      _index = start;
+      return null;
+    }
+
+    while (!isDone) {
+      if (peek() != '`') {
+        advance();
+        continue;
+      }
+      final closeStart = _index;
+      while (!isDone && peek() == '`') {
+        advance();
+      }
+      final closeCount = _index - closeStart;
+      if (closeCount == openCount) {
+        return Token(TokenType.markdown, _input.substring(start, _index));
+      }
+      // Count mismatch — keep scanning
+    }
+
+    // No closing delimiter found — record count as exhausted, then backtrack.
+    _noCloserPastEnd.add(openCount);
+    _index = start;
+    return null;
+  }
+
+  Token _scanFencedBlock(int start, String fenceChar, int openCount) {
+    // Skip optional language identifier and the opening line's newline
+    while (!isDone && peek() != '\n') {
+      advance();
+    }
+    if (!isDone) advance(); // consume '\n'
+
+    // Search for a closing fence: a line that consists of >= openCount fence
+    // characters followed by optional whitespace only (CommonMark §4.4–4.5).
+    while (!isDone) {
+      // CommonMark §4.4–4.5: closing fence may be indented up to 3 spaces.
+      int indent = 0;
+      while (indent < 3 && !isDone && peek() == ' ') {
+        advance();
+        indent++;
+      }
+
+      final lineStart = _index;
+      while (!isDone && peek() == fenceChar) {
+        advance();
+      }
+      final closeCount = _index - lineStart;
+      // A valid closer must have only optional whitespace after the fence chars.
+      // A line like "```python" has enough backticks but is not a valid closer.
+      bool isValidCloser = closeCount >= openCount;
+      if (isValidCloser) {
+        while (!isDone && peek() != '\n') {
+          if (peek() != ' ' && peek() != '\t' && peek() != '\r') {
+            isValidCloser = false;
+            break;
+          }
+          advance();
+        }
+        if (isValidCloser) {
+          if (!isDone) advance(); // consume '\n'
+          return Token(TokenType.markdown, _input.substring(start, _index));
+        }
+      }
+      // Not a closing fence — advance to the end of this line
+      while (!isDone && peek() != '\n') {
+        advance();
+      }
+      if (!isDone) advance(); // consume '\n'
+    }
+
+    // Unclosed fenced block — protect everything to end of input
+    return Token(TokenType.markdown, _input.substring(start));
   }
 
   void scanQuoted(String quote) {
@@ -216,6 +418,33 @@ class _Scanner {
       (c >= 0x30 && c <= 0x39) || // 0-9
       c == 0x21 ||
       c == 0x3F; // ! ?
+
+  /// Returns true if the region from [pos] to the next newline (or EOF)
+  /// contains a backtick character.  Used to validate backtick-fence info
+  /// strings: CommonMark §4.4 forbids backticks in backtick-fence info strings.
+  bool _infoStringHasBacktick(int pos) {
+    for (int i = pos; i < _input.length; i++) {
+      final c = _input[i];
+      if (c == '\n' || c == '\r') return false;
+      if (c == '`') return true;
+    }
+    return false;
+  }
+
+  /// Returns true if [pos] is a valid fenced-block opener position:
+  /// either the very start of [_input], or preceded only by up to 3 space
+  /// characters since the last newline (CommonMark §4.4–4.5).
+  bool _isAtLineStart(int pos) {
+    if (pos == 0) return true;
+    int i = pos - 1;
+    int spaces = 0;
+    while (i >= 0 && _input[i] == ' ') {
+      spaces++;
+      i--;
+    }
+    if (spaces > 3) return false;
+    return i < 0 || _input[i] == '\n';
+  }
 
   bool _isSpecialTag(String tagName) {
     const specialTags = {

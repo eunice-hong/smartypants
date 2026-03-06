@@ -256,7 +256,7 @@ class SmartyPants {
     const escapeChar = '\uE000';
 
     for (final token in tokens) {
-      if (token.type == TokenType.html) {
+      if (token.type == TokenType.html || token.type == TokenType.markdown) {
         htmlPlaceholders.add(token.content);
         buffer.write(placeholderChar);
       } else {
