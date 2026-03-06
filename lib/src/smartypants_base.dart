@@ -270,6 +270,7 @@ class SmartyPantsConfig {
 /// `<textarea>`) are preserved and never transformed.
 class SmartyPants {
   static final _quotePattern = RegExp(r'"([^"]+)"');
+  static final _singleQuotePattern = RegExp(r"'([^']+)'");
   static final _whitespacePattern = RegExp(r'\s+');
 
   // Sentinel characters used by the HTML-masking / marker pipeline in
@@ -517,6 +518,18 @@ class SmartyPants {
           _escapeSentinels(style.open, doubleAngleMarker, markerEscape);
       final close =
           _escapeSentinels(style.close, doubleAngleMarker, markerEscape);
+      final secOpenRaw = style.secondaryOpen;
+      final secCloseRaw = style.secondaryClose;
+      if (secOpenRaw != null && secCloseRaw != null) {
+        final secOpen =
+            _escapeSentinels(secOpenRaw, doubleAngleMarker, markerEscape);
+        final secClose =
+            _escapeSentinels(secCloseRaw, doubleAngleMarker, markerEscape);
+        output = output.replaceAllMapped(
+          _singleQuotePattern,
+          (match) => '$secOpen${match[1]}$secClose',
+        );
+      }
       output = output.replaceAll("'", '\u2019');
       output = output.replaceAllMapped(
         _quotePattern,

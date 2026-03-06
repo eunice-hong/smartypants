@@ -450,6 +450,78 @@ void main() {
     });
   });
 
+  group('secondary (single) quotes', () {
+    test('German locale applies secondary marks inside nested single quotes',
+        () {
+      const config = SmartyPantsConfig(locale: SmartyPantsLocale.de);
+      expect(
+        SmartyPants.formatText('"Er sagte \'Hallo\'"', config: config),
+        '\u201EEr sagte \u201AHallo\u2018\u201C',
+      );
+    });
+
+    test('French locale applies secondary marks inside nested single quotes',
+        () {
+      const config = SmartyPantsConfig(locale: SmartyPantsLocale.fr);
+      expect(
+        SmartyPants.formatText('"il dit \'bonjour\'"', config: config),
+        '\u00ABil dit \u2039bonjour\u203A\u00BB',
+      );
+    });
+
+    test('English locale applies secondary marks inside nested single quotes',
+        () {
+      const config = SmartyPantsConfig(locale: SmartyPantsLocale.en);
+      expect(
+        SmartyPants.formatText('"He said \'hi\'"', config: config),
+        '\u201CHe said \u2018hi\u2019\u201D',
+      );
+    });
+
+    test(
+        'Japanese locale applies CJK secondary marks inside nested single quotes',
+        () {
+      const config = SmartyPantsConfig(locale: SmartyPantsLocale.ja);
+      expect(
+        SmartyPants.formatText('"nested \'text\'"', config: config),
+        '\u300Cnested \u300Etext\u300F\u300D',
+      );
+    });
+
+    test('custom style with secondaryOpen/secondaryClose uses them', () {
+      const config = SmartyPantsConfig(
+        customQuoteStyle: QuoteStyle(
+          open: '[',
+          close: ']',
+          secondaryOpen: '{',
+          secondaryClose: '}',
+        ),
+      );
+      expect(
+        SmartyPants.formatText('"a \'b\' c"', config: config),
+        '[a {b} c]',
+      );
+    });
+
+    test('apostrophes in contractions still become \\u2019', () {
+      expect(
+        SmartyPants.formatText("don't"),
+        'don\u2019t',
+      );
+    });
+
+    test('custom style without secondary marks leaves apostrophes as \\u2019',
+        () {
+      const config = SmartyPantsConfig(
+        customQuoteStyle: QuoteStyle(open: '[', close: ']'),
+      );
+      expect(
+        SmartyPants.formatText("\"don't\"", config: config),
+        "[don\u2019t]",
+      );
+    });
+  });
+
   group('SmartyPantsConfig default backward compatibility', () {
     test('default config produces same output as explicit all-true config', () {
       const inputs = [
