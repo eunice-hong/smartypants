@@ -469,6 +469,22 @@ void main() {
       );
     });
 
+    test('French locale handles apostrophe inside single-quoted span', () {
+      const config = SmartyPantsConfig(locale: SmartyPantsLocale.fr);
+      expect(
+        SmartyPants.formatText('"il dit \'l\'homme\'"', config: config),
+        '\u00ABil dit \u2039l\u2019homme\u203A\u00BB', // «il dit ‹l'homme›»
+      );
+    });
+
+    test('English locale handles apostrophe inside single-quoted span', () {
+      const config = SmartyPantsConfig(locale: SmartyPantsLocale.en);
+      expect(
+        SmartyPants.formatText('"He said \'it\'s great\'"', config: config),
+        '\u201CHe said \u2018it\u2019s great\u2019\u201D', // "He said 'it's great'"
+      );
+    });
+
     test('English locale applies secondary marks inside nested single quotes',
         () {
       const config = SmartyPantsConfig(locale: SmartyPantsLocale.en);
