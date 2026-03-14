@@ -281,6 +281,11 @@ class SmartyPants {
   static const _escapeChar = '\uE000'; // first-loop escape prefix
   static const _placeholderChar = '\uFFFC'; // HTML-token placeholder
 
+  // Placeholders used when custom secondary quote delimiters are ASCII
+  // apostrophe (U+0027), so the apostrophe pass does not rewrite them.
+  static const _secondaryOpenApostrophePlaceholder = '\uE010';
+  static const _secondaryCloseApostrophePlaceholder = '\uE011';
+
   /// Escapes reserved sentinel characters in [s] so they survive both restore
   /// loops in [formatText] as literal characters.
   ///
@@ -525,12 +530,26 @@ class SmartyPants {
             _escapeSentinels(secOpenRaw, doubleAngleMarker, markerEscape);
         final secClose =
             _escapeSentinels(secCloseRaw, doubleAngleMarker, markerEscape);
+        // When secondary delimiters are ASCII apostrophe, use placeholders so
+        // the apostrophe pass below does not rewrite the user-configured
+        // delimiters (P2: preserve custom secondary quote delimiters).
+        final singleQuoteOpen =
+            secOpenRaw == "'" ? _secondaryOpenApostrophePlaceholder : secOpen;
+        final singleQuoteClose = secCloseRaw == "'"
+            ? _secondaryCloseApostrophePlaceholder
+            : secClose;
         output = output.replaceAllMapped(
           _singleQuotePattern,
-          (match) => '$secOpen${match[1]}$secClose',
+          (match) => '$singleQuoteOpen${match[1]}$singleQuoteClose',
         );
       }
       output = output.replaceAll("'", '\u2019');
+      if (secOpenRaw == "'") {
+        output = output.replaceAll(_secondaryOpenApostrophePlaceholder, "'");
+      }
+      if (secCloseRaw == "'") {
+        output = output.replaceAll(_secondaryCloseApostrophePlaceholder, "'");
+      }
       output = output.replaceAllMapped(
         _quotePattern,
         (match) => '$open${match[1]}$close',

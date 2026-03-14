@@ -519,6 +519,23 @@ void main() {
       );
     });
 
+    test(
+        'custom secondary quote delimiters ASCII apostrophe are preserved from apostrophe pass',
+        () {
+      const config = SmartyPantsConfig(
+        customQuoteStyle: QuoteStyle(
+          open: '"',
+          close: '"',
+          secondaryOpen: "'",
+          secondaryClose: "'",
+        ),
+      );
+      expect(
+        SmartyPants.formatText('"say \'don\'t\'"', config: config),
+        '"say \'don\u2019t\'"',
+      );
+    });
+
     test('apostrophes in contractions still become \\u2019', () {
       expect(
         SmartyPants.formatText("don't"),
