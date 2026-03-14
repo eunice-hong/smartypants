@@ -271,9 +271,12 @@ class SmartyPantsConfig {
 class SmartyPants {
   static final _quotePattern = RegExp(r'"([^"]+)"');
   // Only treat ' as quote boundaries when not between word chars (apostrophes
-  // like in "can't" / "l'homme"); (?<!\w)' = opening, '(?!\w) = closing.
-  static final _singleQuotePattern =
-      RegExp(r"(?<!\w)'((?:[^']|(?<=\w)'(?=\w))*?)'(?!\w)");
+  // like in "can't" / "l'homme" / "l'été"). Use \p{L}\p{N}_ (Unicode letters,
+  // digits, underscore) since Dart's \w is ASCII-only even with unicode: true.
+  static final _singleQuotePattern = RegExp(
+    r"(?<![\p{L}\p{N}_])'((?:[^']|(?<=[\p{L}\p{N}_])'(?=[\p{L}\p{N}_]))*?)'(?![\p{L}\p{N}_])",
+    unicode: true,
+  );
   static final _whitespacePattern = RegExp(r'\s+');
 
   // Sentinel characters used by the HTML-masking / marker pipeline in

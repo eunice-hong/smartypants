@@ -477,6 +477,17 @@ void main() {
       );
     });
 
+    test(
+        'French locale treats apostrophe before accented letter as apostrophe not quote',
+        () {
+      // \w must be Unicode-aware so "é" is a word char; else ' in "l'été" becomes closing quote.
+      const config = SmartyPantsConfig(locale: SmartyPantsLocale.fr);
+      expect(
+        SmartyPants.formatText('"il dit \'l\'été\'"', config: config),
+        '\u00ABil dit \u2039l\u2019été\u203A\u00BB', // «il dit ‹l'été›»
+      );
+    });
+
     test('English locale handles apostrophe inside single-quoted span', () {
       const config = SmartyPantsConfig(locale: SmartyPantsLocale.en);
       expect(
