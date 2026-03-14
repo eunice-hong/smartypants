@@ -270,7 +270,10 @@ class SmartyPantsConfig {
 /// `<textarea>`) are preserved and never transformed.
 class SmartyPants {
   static final _quotePattern = RegExp(r'"([^"]+)"');
-  static final _singleQuotePattern = RegExp(r"'((?:[^']|(?<=\w)'(?=\w))+)'");
+  // Only treat ' as quote boundaries when not between word chars (apostrophes
+  // like in "can't" / "l'homme"); (?<!\w)' = opening, '(?!\w) = closing.
+  static final _singleQuotePattern =
+      RegExp(r"(?<!\w)'((?:[^']|(?<=\w)'(?=\w))*?)'(?!\w)");
   static final _whitespacePattern = RegExp(r'\s+');
 
   // Sentinel characters used by the HTML-masking / marker pipeline in

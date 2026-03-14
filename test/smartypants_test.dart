@@ -543,6 +543,14 @@ void main() {
       );
     });
 
+    test('single-quote pass does not match across contractions', () {
+      // Apostrophes in "can't" and "won't" must stay apostrophes, not open/close quotes.
+      expect(
+        SmartyPants.formatText("can't and won't"),
+        'can\u2019t and won\u2019t',
+      );
+    });
+
     test('custom style without secondary marks leaves apostrophes as \\u2019',
         () {
       const config = SmartyPantsConfig(
