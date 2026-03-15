@@ -574,6 +574,32 @@ void main() {
     });
   });
 
+  group('QuoteStyle equality', () {
+    test('identical static constants are equal', () {
+      expect(QuoteStyle.french, equals(QuoteStyle.french));
+    });
+
+    test('new instance with same values equals static constant', () {
+      const custom = QuoteStyle(
+        open: '\u00AB',
+        close: '\u00BB',
+        secondaryOpen: '\u2039',
+        secondaryClose: '\u203A',
+      );
+      expect(custom, equals(QuoteStyle.french));
+    });
+
+    test('different QuoteStyles are not equal', () {
+      expect(QuoteStyle.french, isNot(equals(QuoteStyle.german)));
+    });
+
+    test('hashCode is consistent with equality', () {
+      const a = QuoteStyle(open: '[', close: ']');
+      const b = QuoteStyle(open: '[', close: ']');
+      expect(a.hashCode, equals(b.hashCode));
+    });
+  });
+
   group('SmartyPantsConfig default backward compatibility', () {
     test('default config produces same output as explicit all-true config', () {
       const inputs = [

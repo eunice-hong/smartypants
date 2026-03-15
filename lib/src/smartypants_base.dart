@@ -69,6 +69,18 @@ class QuoteStyle {
     secondaryOpen: '\u300E',
     secondaryClose: '\u300F',
   );
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is QuoteStyle &&
+          open == other.open &&
+          close == other.close &&
+          secondaryOpen == other.secondaryOpen &&
+          secondaryClose == other.secondaryClose;
+
+  @override
+  int get hashCode => Object.hash(open, close, secondaryOpen, secondaryClose);
 }
 
 /// Supported locale presets for typography transformations.
