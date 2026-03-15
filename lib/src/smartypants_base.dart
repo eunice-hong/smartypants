@@ -87,6 +87,14 @@ class QuoteStyle {
 
   @override
   int get hashCode => Object.hash(open, close, secondaryOpen, secondaryClose);
+
+  @override
+  String toString() {
+    final secondary = secondaryOpen != null
+        ? ', secondaryOpen: $secondaryOpen, secondaryClose: $secondaryClose'
+        : '';
+    return 'QuoteStyle(open: $open, close: $close$secondary)';
+  }
 }
 
 /// Supported locale presets for typography transformations.
