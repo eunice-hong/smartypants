@@ -364,13 +364,23 @@ class SmartyPants {
   /// Matches one or more whitespace characters for normalization.
   static final _whitespacePattern = RegExp(r'\s+');
 
-  // Sentinel characters used by the HTML-masking / marker pipeline in
-  // [formatText].  Any user-supplied string (e.g. a custom quote delimiter)
-  // that is inserted *after* masking must have these characters escaped so that
-  // the two restore loops treat them as literal output rather than control
-  // signals.
-  static const _escapeChar = '\uE000'; // first-loop escape prefix
-  static const _placeholderChar = '\uFFFC'; // HTML-token placeholder
+  // ── Private Use Area (PUA) & sentinel character registry ──
+  //
+  // [formatText] uses two nested escape-restore loops. Any character that
+  // serves as a control signal in either loop is listed here so that
+  // [_escapeSentinels] can protect user-supplied strings from collisions.
+  //
+  //  Char    Constant                              Purpose
+  //  ------  ------------------------------------  ----------------------------
+  //  U+E000  _escapeChar                           First-loop escape prefix
+  //  U+FFFC  _placeholderChar                      HTML-token placeholder
+  //  U+E001  doubleAngleMarker  (local)            «/» marker for << / >>
+  //  U+E002  markerEscape       (local)            Escape prefix for markers
+  //  U+E010  _secondaryOpenApostrophePlaceholder    Secondary open  ' placeholder
+  //  U+E011  _secondaryCloseApostrophePlaceholder   Secondary close ' placeholder
+  //
+  static const _escapeChar = '\uE000';
+  static const _placeholderChar = '\uFFFC';
 
   // Placeholders used when custom secondary quote delimiters are ASCII
   // apostrophe (U+0027), so the apostrophe pass does not rewrite them.
