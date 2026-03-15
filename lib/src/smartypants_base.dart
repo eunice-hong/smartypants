@@ -295,14 +295,27 @@ class SmartyPantsConfig {
 /// (`<script>`, `<style>`, `<pre>`, `<code>`, `<kbd>`, `<math>`,
 /// `<textarea>`) are preserved and never transformed.
 class SmartyPants {
+  /// Matches `"..."` double-quoted spans and captures the inner content.
   static final _quotePattern = RegExp(r'"([^"]+)"');
-  // Only treat ' as quote boundaries when not between word chars (apostrophes
-  // like in "can't" / "l'homme" / "l'été"). Use \p{L}\p{N}_ (Unicode letters,
-  // digits, underscore) since Dart's \w is ASCII-only even with unicode: true.
+
+  /// Matches `'...'` single-quoted spans while preserving in-word apostrophes.
+  ///
+  /// The pattern uses Unicode-aware character classes (`\p{L}\p{N}_`) because
+  /// Dart's `\w` is ASCII-only even with `unicode: true`. This ensures
+  /// apostrophes in contractions (`can't`) and non-ASCII words (`l'homme`,
+  /// `l'été`) are treated as word-internal and not as quote boundaries.
+  ///
+  /// Breakdown:
+  /// - `(?<![\p{L}\p{N}_])` — opening `'` must NOT follow a word character
+  /// - `(...)` — captured inner content allows mid-word apostrophes via
+  ///   `(?<=[\p{L}\p{N}_])'(?=[\p{L}\p{N}_])` (apostrophe between word chars)
+  /// - `'(?![\p{L}\p{N}_])` — closing `'` must NOT precede a word character
   static final _singleQuotePattern = RegExp(
     r"(?<![\p{L}\p{N}_])'((?:[^']|(?<=[\p{L}\p{N}_])'(?=[\p{L}\p{N}_]))*?)'(?![\p{L}\p{N}_])",
     unicode: true,
   );
+
+  /// Matches one or more whitespace characters for normalization.
   static final _whitespacePattern = RegExp(r'\s+');
 
   // Sentinel characters used by the HTML-masking / marker pipeline in
