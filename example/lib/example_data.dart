@@ -259,6 +259,45 @@ const List<ExampleCategory> exampleCategories = [
     ],
   ),
   ExampleCategory(
+    name: 'Nested Quotes',
+    icon: '\u2018',
+    summary: 'Primary and secondary (nested) quote marks',
+    items: [
+      ExampleItem(
+        description: 'English nested quotes (\u201C \u2018...\u2019 \u201D)',
+        input: '"He said \'hello\'"',
+        config: SmartyPantsConfig(locale: SmartyPantsLocale.en),
+      ),
+      ExampleItem(
+        description: 'French nested quotes (\u00AB \u2039...\u203A \u00BB)',
+        input: '"il dit \'bonjour\'"',
+        config: SmartyPantsConfig(locale: SmartyPantsLocale.fr),
+      ),
+      ExampleItem(
+        description: 'German nested quotes (\u201E \u201A...\u2018 \u201C)',
+        input: '"Er sagte \'Hallo\'"',
+        config: SmartyPantsConfig(locale: SmartyPantsLocale.de),
+      ),
+      ExampleItem(
+        description: 'Apostrophe inside nested quote',
+        input: '"He said \'it\'s great\'"',
+        config: SmartyPantsConfig(locale: SmartyPantsLocale.en),
+      ),
+      ExampleItem(
+        description: 'Custom secondary marks ({ })',
+        input: '"a \'b\' c"',
+        config: SmartyPantsConfig(
+          customQuoteStyle: QuoteStyle(
+            open: '[',
+            close: ']',
+            secondaryOpen: '{',
+            secondaryClose: '}',
+          ),
+        ),
+      ),
+    ],
+  ),
+  ExampleCategory(
     name: 'Markdown Support',
     icon: '`',
     summary: 'Code spans and fenced blocks are preserved during transformation',
