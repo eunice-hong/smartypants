@@ -31,12 +31,18 @@ class QuoteStyle {
   final String? secondaryClose;
 
   /// Creates a [QuoteStyle].
+  ///
+  /// [secondaryOpen] and [secondaryClose] must both be provided or both
+  /// omitted. Providing only one throws an [AssertionError] in debug mode.
   const QuoteStyle({
     required this.open,
     required this.close,
     this.secondaryOpen,
     this.secondaryClose,
-  });
+  }) : assert(
+          (secondaryOpen == null) == (secondaryClose == null),
+          'secondaryOpen and secondaryClose must both be provided or both omitted',
+        );
 
   /// English curly quotes: `"` / `"` (U+201C, U+201D).
   static const QuoteStyle english = QuoteStyle(

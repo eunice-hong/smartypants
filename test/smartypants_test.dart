@@ -598,6 +598,20 @@ void main() {
       const b = QuoteStyle(open: '[', close: ']');
       expect(a.hashCode, equals(b.hashCode));
     });
+
+    test('assertion fails when only secondaryOpen is provided', () {
+      expect(
+        () => QuoteStyle(open: '[', close: ']', secondaryOpen: '{'),
+        throwsA(isA<AssertionError>()),
+      );
+    });
+
+    test('assertion fails when only secondaryClose is provided', () {
+      expect(
+        () => QuoteStyle(open: '[', close: ']', secondaryClose: '}'),
+        throwsA(isA<AssertionError>()),
+      );
+    });
   });
 
   group('SmartyPantsConfig default backward compatibility', () {
