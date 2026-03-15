@@ -572,6 +572,43 @@ void main() {
         "[don\u2019t]",
       );
     });
+
+    test('standalone single quotes without surrounding double quotes', () {
+      expect(
+        SmartyPants.formatText("'Hello, World!'"),
+        '\u2018Hello, World!\u2019',
+      );
+    });
+
+    test('standalone single quotes with apostrophe inside', () {
+      expect(
+        SmartyPants.formatText("'it's great'"),
+        '\u2018it\u2019s great\u2019',
+      );
+    });
+
+    test('multiple standalone single-quoted spans', () {
+      expect(
+        SmartyPants.formatText("'foo' and 'bar'"),
+        '\u2018foo\u2019 and \u2018bar\u2019',
+      );
+    });
+
+    test('standalone single quotes with German locale', () {
+      const config = SmartyPantsConfig(locale: SmartyPantsLocale.de);
+      expect(
+        SmartyPants.formatText("'Hallo'", config: config),
+        '\u201AHallo\u2018',
+      );
+    });
+
+    test('standalone single quotes with French locale', () {
+      const config = SmartyPantsConfig(locale: SmartyPantsLocale.fr);
+      expect(
+        SmartyPants.formatText("'bonjour'", config: config),
+        '\u2039bonjour\u203A',
+      );
+    });
   });
 
   group('QuoteStyle equality', () {
