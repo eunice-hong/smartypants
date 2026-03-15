@@ -5,6 +5,98 @@ import 'cjk_utils.dart';
 
 import 'tokenizer.dart';
 
+/// Encapsulates the opening and closing quote characters for a typographic style.
+///
+/// Use the static constants ([english], [french], [german], [cjkCornerBracket])
+/// for common presets, or construct a custom instance for other conventions.
+///
+/// ```dart
+/// // Use a preset
+/// const style = QuoteStyle.french; // « »
+///
+/// // Custom style
+/// const style = QuoteStyle(open: '[', close: ']');
+/// ```
+class QuoteStyle {
+  /// The primary opening quote character.
+  final String open;
+
+  /// The primary closing quote character.
+  final String close;
+
+  /// The secondary (nested) opening quote character, if any.
+  final String? secondaryOpen;
+
+  /// The secondary (nested) closing quote character, if any.
+  final String? secondaryClose;
+
+  /// Creates a [QuoteStyle].
+  ///
+  /// [secondaryOpen] and [secondaryClose] must both be provided or both
+  /// omitted. Providing only one throws an [AssertionError] in debug mode.
+  const QuoteStyle({
+    required this.open,
+    required this.close,
+    this.secondaryOpen,
+    this.secondaryClose,
+  }) : assert(
+          (secondaryOpen == null) == (secondaryClose == null),
+          'secondaryOpen and secondaryClose must both be provided or both omitted',
+        );
+
+  /// English curly quotes: `"` / `"` (U+201C, U+201D).
+  static const QuoteStyle english = QuoteStyle(
+    open: '\u201C',
+    close: '\u201D',
+    secondaryOpen: '\u2018',
+    secondaryClose: '\u2019',
+  );
+
+  /// French guillemet quotes: `«` / `»` (U+00AB, U+00BB).
+  static const QuoteStyle french = QuoteStyle(
+    open: '\u00AB',
+    close: '\u00BB',
+    secondaryOpen: '\u2039',
+    secondaryClose: '\u203A',
+  );
+
+  /// German low-high quotes: `„` / `"` (U+201E, U+201C).
+  static const QuoteStyle german = QuoteStyle(
+    open: '\u201E',
+    close: '\u201C',
+    secondaryOpen: '\u201A',
+    secondaryClose: '\u2018',
+  );
+
+  /// CJK corner bracket quotes: `「` / `」` (U+300C, U+300D).
+  static const QuoteStyle cjkCornerBracket = QuoteStyle(
+    open: '\u300C',
+    close: '\u300D',
+    secondaryOpen: '\u300E',
+    secondaryClose: '\u300F',
+  );
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is QuoteStyle &&
+          open == other.open &&
+          close == other.close &&
+          secondaryOpen == other.secondaryOpen &&
+          secondaryClose == other.secondaryClose;
+
+  @override
+  int get hashCode => Object.hash(open, close, secondaryOpen, secondaryClose);
+
+  @override
+  String toString() {
+    final secondary = secondaryOpen != null
+        ? ', secondaryOpen: $secondaryOpen, secondaryClose: $secondaryClose'
+        : '';
+    return 'QuoteStyle(open: $open, close: $close$secondary)';
+  }
+}
+
 /// Supported locale presets for typography transformations.
 ///
 /// Each locale applies language-specific rules on top of the base
@@ -24,6 +116,12 @@ enum SmartyPantsLocale {
 
   /// Simplified Chinese. Adds CJK ellipsis normalization and angle bracket quotation.
   zhHans,
+
+  /// French. Uses guillemet quotes (« »).
+  fr,
+
+  /// German. Uses low-high quotes („ ").
+  de,
 }
 
 /// Configuration for [SmartyPants.formatText] transformations.
@@ -129,6 +227,17 @@ class SmartyPantsConfig {
   /// Defaults to `true`.
   final bool cjkAngleBrackets;
 
+  /// A custom quote style that overrides the locale default when [quotes] is `true`.
+  ///
+  /// When non-null, this takes precedence over the quote style resolved from
+  /// [locale]. Useful for locales not covered by [SmartyPantsLocale] or when
+  /// a non-standard convention is required.
+  ///
+  /// Resolution order: [customQuoteStyle] > locale default.
+  ///
+  /// Defaults to `null` (use locale default).
+  final QuoteStyle? customQuoteStyle;
+
   /// Creates a [SmartyPantsConfig].
   ///
   /// All parameters are optional and default to their documented values.
@@ -143,9 +252,25 @@ class SmartyPantsConfig {
     this.whitespaceNormalization = true,
     this.cjkEllipsisNormalization = true,
     this.cjkAngleBrackets = true,
+    this.customQuoteStyle,
   });
 
   /// Returns a copy of this config with the given fields replaced.
+  ///
+  /// [customQuoteStyle] uses a nullable factory (`QuoteStyle? Function()?`)
+  /// so that callers can distinguish between "not specified" (preserves the
+  /// current value) and "explicitly cleared" (sets to `null`).
+  ///
+  /// ```dart
+  /// // Preserve existing customQuoteStyle:
+  /// config.copyWith(dashes: false);
+  ///
+  /// // Replace with a new style:
+  /// config.copyWith(customQuoteStyle: () => QuoteStyle.french);
+  ///
+  /// // Clear back to locale default:
+  /// config.copyWith(customQuoteStyle: () => null);
+  /// ```
   SmartyPantsConfig copyWith({
     bool? smart,
     SmartyPantsLocale? locale,
@@ -157,6 +282,7 @@ class SmartyPantsConfig {
     bool? whitespaceNormalization,
     bool? cjkEllipsisNormalization,
     bool? cjkAngleBrackets,
+    QuoteStyle? Function()? customQuoteStyle,
   }) {
     return SmartyPantsConfig(
       smart: smart ?? this.smart,
@@ -171,8 +297,41 @@ class SmartyPantsConfig {
       cjkEllipsisNormalization:
           cjkEllipsisNormalization ?? this.cjkEllipsisNormalization,
       cjkAngleBrackets: cjkAngleBrackets ?? this.cjkAngleBrackets,
+      customQuoteStyle:
+          customQuoteStyle == null ? this.customQuoteStyle : customQuoteStyle(),
     );
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is SmartyPantsConfig &&
+          smart == other.smart &&
+          locale == other.locale &&
+          quotes == other.quotes &&
+          dashes == other.dashes &&
+          ellipsis == other.ellipsis &&
+          mathSymbols == other.mathSymbols &&
+          arrows == other.arrows &&
+          whitespaceNormalization == other.whitespaceNormalization &&
+          cjkEllipsisNormalization == other.cjkEllipsisNormalization &&
+          cjkAngleBrackets == other.cjkAngleBrackets &&
+          customQuoteStyle == other.customQuoteStyle;
+
+  @override
+  int get hashCode => Object.hash(
+        smart,
+        locale,
+        quotes,
+        dashes,
+        ellipsis,
+        mathSymbols,
+        arrows,
+        whitespaceNormalization,
+        cjkEllipsisNormalization,
+        cjkAngleBrackets,
+        customQuoteStyle,
+      );
 }
 
 /// Applies SmartyPants-style typography transformations to a string.
@@ -182,8 +341,90 @@ class SmartyPantsConfig {
 /// (`<script>`, `<style>`, `<pre>`, `<code>`, `<kbd>`, `<math>`,
 /// `<textarea>`) are preserved and never transformed.
 class SmartyPants {
+  /// Matches `"..."` double-quoted spans and captures the inner content.
   static final _quotePattern = RegExp(r'"([^"]+)"');
+
+  /// Matches `'...'` single-quoted spans while preserving in-word apostrophes.
+  ///
+  /// The pattern uses Unicode-aware character classes (`\p{L}\p{N}_`) because
+  /// Dart's `\w` is ASCII-only even with `unicode: true`. This ensures
+  /// apostrophes in contractions (`can't`) and non-ASCII words (`l'homme`,
+  /// `l'été`) are treated as word-internal and not as quote boundaries.
+  ///
+  /// Breakdown:
+  /// - `(?<![\p{L}\p{N}_])` — opening `'` must NOT follow a word character
+  /// - `(...)` — captured inner content allows mid-word apostrophes via
+  ///   `(?<=[\p{L}\p{N}_])'(?=[\p{L}\p{N}_])` (apostrophe between word chars)
+  /// - `'(?![\p{L}\p{N}_])` — closing `'` must NOT precede a word character
+  static final _singleQuotePattern = RegExp(
+    r"(?<![\p{L}\p{N}_])'((?:[^']|(?<=[\p{L}\p{N}_])'(?=[\p{L}\p{N}_]))*?)'(?![\p{L}\p{N}_])",
+    unicode: true,
+  );
+
+  /// Matches one or more whitespace characters for normalization.
   static final _whitespacePattern = RegExp(r'\s+');
+
+  // ── Private Use Area (PUA) & sentinel character registry ──
+  //
+  // [formatText] uses two nested escape-restore loops. Any character that
+  // serves as a control signal in either loop is listed here so that
+  // [_escapeSentinels] can protect user-supplied strings from collisions.
+  //
+  //  Char    Constant                              Purpose
+  //  ------  ------------------------------------  ----------------------------
+  //  U+E000  _escapeChar                           First-loop escape prefix
+  //  U+FFFC  _placeholderChar                      HTML-token placeholder
+  //  U+E001  doubleAngleMarker  (local)            «/» marker for << / >>
+  //  U+E002  markerEscape       (local)            Escape prefix for markers
+  //  U+E010  _secondaryOpenApostrophePlaceholder    Secondary open  ' placeholder
+  //  U+E011  _secondaryCloseApostrophePlaceholder   Secondary close ' placeholder
+  //
+  static const _escapeChar = '\uE000';
+  static const _placeholderChar = '\uFFFC';
+
+  // Placeholders used when custom secondary quote delimiters are ASCII
+  // apostrophe (U+0027), so the apostrophe pass does not rewrite them.
+  static const _secondaryOpenApostrophePlaceholder = '\uE010';
+  static const _secondaryCloseApostrophePlaceholder = '\uE011';
+
+  /// Escapes reserved sentinel characters in [s] so they survive both restore
+  /// loops in [formatText] as literal characters.
+  ///
+  /// Escape order matters — each sentinel is escaped before a new occurrence
+  /// of a later sentinel could be introduced.
+  static String _escapeSentinels(
+    String s,
+    String doubleAngleMarker,
+    String markerEscape,
+  ) {
+    return s
+        // Second-loop sentinels (markerEscape before doubleAngleMarker so the
+        // newly introduced markerEscape doesn't itself get doubled).
+        .replaceAll(markerEscape, '$markerEscape$markerEscape')
+        .replaceAll(doubleAngleMarker, '$markerEscape$doubleAngleMarker')
+        // First-loop sentinels (_escapeChar before _placeholderChar for the
+        // same reason).
+        .replaceAll(_escapeChar, '$_escapeChar$_escapeChar')
+        .replaceAll(_placeholderChar, '$_escapeChar$_placeholderChar');
+  }
+
+  static QuoteStyle _quoteStyleForLocale(SmartyPantsLocale locale) {
+    switch (locale) {
+      case SmartyPantsLocale.fr:
+        return QuoteStyle.french;
+      case SmartyPantsLocale.de:
+        return QuoteStyle.german;
+      case SmartyPantsLocale.ko:
+      case SmartyPantsLocale.ja:
+      case SmartyPantsLocale.zhHant:
+        return QuoteStyle.cjkCornerBracket;
+      // Simplified Chinese uses the same curly double quotes (" ") as English
+      // per GB/T 15834-2011 standard.
+      case SmartyPantsLocale.zhHans:
+      case SmartyPantsLocale.en:
+        return QuoteStyle.english;
+    }
+  }
 
   /// Transforms [input] into typographically correct text.
   ///
@@ -347,14 +588,6 @@ class SmartyPants {
 
     // Base transformations
 
-    if (config.quotes) {
-      output = output.replaceAllMapped(
-        _quotePattern,
-        (match) => '\u201C${match[1]}\u201D',
-      );
-      output = output.replaceAll("'", '\u2019');
-    }
-
     if (config.dashes) {
       output = output.replaceAll('---', '\u2014');
       output = output.replaceAll('--', '\u2013');
@@ -381,6 +614,49 @@ class SmartyPants {
           .replaceAll('->', '\u2192')
           .replaceAll('<-', '\u2190')
           .replaceAll('=>', '\u21D2');
+    }
+
+    // Quotes are applied last so custom delimiters are not rewritten by
+    // subsequent passes (e.g. a delimiter containing "--" would otherwise
+    // be converted to an en dash by the dashes pass above).
+    if (config.quotes) {
+      final style =
+          config.customQuoteStyle ?? _quoteStyleForLocale(config.locale);
+      final open =
+          _escapeSentinels(style.open, doubleAngleMarker, markerEscape);
+      final close =
+          _escapeSentinels(style.close, doubleAngleMarker, markerEscape);
+      final secOpenRaw = style.secondaryOpen;
+      final secCloseRaw = style.secondaryClose;
+      if (secOpenRaw != null && secCloseRaw != null) {
+        final secOpen =
+            _escapeSentinels(secOpenRaw, doubleAngleMarker, markerEscape);
+        final secClose =
+            _escapeSentinels(secCloseRaw, doubleAngleMarker, markerEscape);
+        // When secondary delimiters are ASCII apostrophe, use placeholders so
+        // the apostrophe pass below does not rewrite the user-configured
+        // delimiters (P2: preserve custom secondary quote delimiters).
+        final singleQuoteOpen =
+            secOpenRaw == "'" ? _secondaryOpenApostrophePlaceholder : secOpen;
+        final singleQuoteClose = secCloseRaw == "'"
+            ? _secondaryCloseApostrophePlaceholder
+            : secClose;
+        output = output.replaceAllMapped(
+          _singleQuotePattern,
+          (match) => '$singleQuoteOpen${match[1]}$singleQuoteClose',
+        );
+      }
+      output = output.replaceAll("'", '\u2019');
+      if (secOpenRaw == "'") {
+        output = output.replaceAll(_secondaryOpenApostrophePlaceholder, "'");
+      }
+      if (secCloseRaw == "'") {
+        output = output.replaceAll(_secondaryCloseApostrophePlaceholder, "'");
+      }
+      output = output.replaceAllMapped(
+        _quotePattern,
+        (match) => '$open${match[1]}$close',
+      );
     }
 
     return output;
