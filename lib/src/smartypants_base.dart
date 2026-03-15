@@ -408,6 +408,8 @@ class SmartyPants {
       case SmartyPantsLocale.ja:
       case SmartyPantsLocale.zhHant:
         return QuoteStyle.cjkCornerBracket;
+      // Simplified Chinese uses the same curly double quotes (" ") as English
+      // per GB/T 15834-2011 standard.
       case SmartyPantsLocale.zhHans:
       case SmartyPantsLocale.en:
         return QuoteStyle.english;
