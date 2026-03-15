@@ -260,7 +260,7 @@ const List<ExampleCategory> exampleCategories = [
   ),
   ExampleCategory(
     name: 'Nested Quotes',
-    icon: '\u2018',
+    icon: '\u275D',
     summary: 'Primary and secondary (nested) quote marks',
     items: [
       ExampleItem(
