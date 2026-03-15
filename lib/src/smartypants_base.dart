@@ -256,6 +256,21 @@ class SmartyPantsConfig {
   });
 
   /// Returns a copy of this config with the given fields replaced.
+  ///
+  /// [customQuoteStyle] uses a nullable factory (`QuoteStyle? Function()?`)
+  /// so that callers can distinguish between "not specified" (preserves the
+  /// current value) and "explicitly cleared" (sets to `null`).
+  ///
+  /// ```dart
+  /// // Preserve existing customQuoteStyle:
+  /// config.copyWith(dashes: false);
+  ///
+  /// // Replace with a new style:
+  /// config.copyWith(customQuoteStyle: () => QuoteStyle.french);
+  ///
+  /// // Clear back to locale default:
+  /// config.copyWith(customQuoteStyle: () => null);
+  /// ```
   SmartyPantsConfig copyWith({
     bool? smart,
     SmartyPantsLocale? locale,
