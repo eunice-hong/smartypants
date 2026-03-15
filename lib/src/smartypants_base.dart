@@ -286,6 +286,37 @@ class SmartyPantsConfig {
           customQuoteStyle == null ? this.customQuoteStyle : customQuoteStyle(),
     );
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is SmartyPantsConfig &&
+          smart == other.smart &&
+          locale == other.locale &&
+          quotes == other.quotes &&
+          dashes == other.dashes &&
+          ellipsis == other.ellipsis &&
+          mathSymbols == other.mathSymbols &&
+          arrows == other.arrows &&
+          whitespaceNormalization == other.whitespaceNormalization &&
+          cjkEllipsisNormalization == other.cjkEllipsisNormalization &&
+          cjkAngleBrackets == other.cjkAngleBrackets &&
+          customQuoteStyle == other.customQuoteStyle;
+
+  @override
+  int get hashCode => Object.hash(
+        smart,
+        locale,
+        quotes,
+        dashes,
+        ellipsis,
+        mathSymbols,
+        arrows,
+        whitespaceNormalization,
+        cjkEllipsisNormalization,
+        cjkAngleBrackets,
+        customQuoteStyle,
+      );
 }
 
 /// Applies SmartyPants-style typography transformations to a string.

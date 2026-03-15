@@ -614,6 +614,50 @@ void main() {
     });
   });
 
+  group('SmartyPantsConfig equality', () {
+    test('default configs are equal', () {
+      const a = SmartyPantsConfig();
+      const b = SmartyPantsConfig();
+      expect(a, equals(b));
+    });
+
+    test('configs with same fields are equal', () {
+      const a = SmartyPantsConfig(
+        locale: SmartyPantsLocale.fr,
+        dashes: false,
+        customQuoteStyle: QuoteStyle.french,
+      );
+      const b = SmartyPantsConfig(
+        locale: SmartyPantsLocale.fr,
+        dashes: false,
+        customQuoteStyle: QuoteStyle.french,
+      );
+      expect(a, equals(b));
+    });
+
+    test('configs with different fields are not equal', () {
+      const a = SmartyPantsConfig(dashes: true);
+      const b = SmartyPantsConfig(dashes: false);
+      expect(a, isNot(equals(b)));
+    });
+
+    test('hashCode is consistent with equality', () {
+      const a = SmartyPantsConfig(locale: SmartyPantsLocale.ko);
+      const b = SmartyPantsConfig(locale: SmartyPantsLocale.ko);
+      expect(a.hashCode, equals(b.hashCode));
+    });
+
+    test('copyWith result equals manually constructed config', () {
+      const original = SmartyPantsConfig(locale: SmartyPantsLocale.fr);
+      final copy = original.copyWith(dashes: false);
+      const manual = SmartyPantsConfig(
+        locale: SmartyPantsLocale.fr,
+        dashes: false,
+      );
+      expect(copy, equals(manual));
+    });
+  });
+
   group('SmartyPantsConfig default backward compatibility', () {
     test('default config produces same output as explicit all-true config', () {
       const inputs = [
